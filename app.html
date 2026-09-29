@@ -1333,7 +1333,11 @@ function healthDraft(day) {
 }
 function healthPayload(dr) {
   const st = dayStats(dr.list);
-  return { app: "Cabana Fitness", profiel: PROFILES[state.profile], type: "Krachttraining", start: `${dr.day} ${dr.start}`, minuten: +dr.min, kcal: +dr.kcal || 0,
+  /* Gezondheid weigert een training die in de toekomst eindigt: schuif de start terug zodat het einde uiterlijk nu is */
+  let start = `${dr.day} ${dr.start}`;
+  const end = new Date(`${dr.day}T${dr.start}:00`).getTime() + (+dr.min) * 60000, now = Date.now() - 60000;
+  if (end > now) { const d = new Date(now - (+dr.min) * 60000); start = `${localDay(d.toISOString())} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  return { app: "Cabana Fitness", profiel: PROFILES[state.profile], type: "Krachttraining", start, minuten: +dr.min, kcal: +dr.kcal || 0,
     oefeningen: st.n, volume_kg: st.volume, samenvatting: dr.list.map(s => `${s.exercise}: ${describe(s)}`).join("\n") };
 }
 function sendToHealth(dr) {
@@ -1705,7 +1709,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v15";
+  const APP_VERSION = "cabana-v16";
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
     fetch("sw.js", { cache: "no-store" }).then(r => r.text()).then(t => { const m = t.match(/cabana-v\d+/); if (m && m[0] !== APP_VERSION) location.reload(); }).catch(() => {});
