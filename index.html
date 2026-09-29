@@ -875,12 +875,19 @@ VIEWS.cardioLog = () => {
   return `${backBtn("cardio", "Cardio Cabana")}
   <div class="head"><h1>${esc(it.name)}</h1><p>Matrix-scherm + Apple Watch</p></div>
   <section class="card">
-    <div class="row" style="align-items:center"><h3 style="flex:1 1 auto">Foto van het scherm</h3><span class="badge" style="flex:none">OCR in fase 2</span></div>
+    <div class="row" style="align-items:center"><h3 style="flex:1 1 auto">Foto van het scherm</h3></div>
     <div class="photo" id="photoBox">
       <input type="file" accept="image/*" capture="environment" id="photoIn" aria-label="Foto maken of kiezen">
       <div id="photoPrev"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><p class="muted small" style="margin:6px 0 0">Tik om een foto te maken of te kiezen</p></div>
     </div>
-    <p class="muted small" style="margin:0">De foto wordt bewaard bij de sessie. In fase 2 leest de app de waarden automatisch uit; voor nu vul je ze hieronder in.</p>
+    <p class="muted small" style="margin:0">De foto wordt bewaard bij de sessie.</p>
+  </section>
+  <section class="card">
+    <h3>Scherm uitlezen</h3>
+    <p class="muted small" style="margin:0">Open de iPhone-<b>Camera</b>, richt op het Matrix-scherm, tik op het tekst-icoon rechtsonder en kies <b>Kopieer alles</b>. Tik dan hier op Plak: tijd, afstand, kcal en snelheid worden ingevuld.</p>
+    <button class="btn primary" id="ocrPaste">Plak tekst van het scherm</button>
+    <textarea class="i" id="ocrText" rows="2" placeholder="Of plak of typ de schermtekst hier" style="resize:vertical"></textarea>
+    <p class="muted small" id="ocrOut" style="margin:0" hidden></p>
   </section>
   <section class="card">
     <h3>Matrix-scherm</h3>
@@ -919,6 +926,20 @@ AFTER.cardioLog = () => {
     try { pendingPhoto = await shrink(f, 900, 0.62); $("#photoPrev").innerHTML = `<img src="${pendingPhoto}" alt="Foto van het Matrix-scherm">`; }
     catch (err) { toast("Kon de foto niet lezen"); }
   };
+  const fill = (text) => {
+    const r = parseMatrix(text), got = [];
+    const put = (id, val, label) => { if (val !== "" && val != null) { $(id).value = String(val).replace(".", ","); got.push(label); } };
+    put("#c_dur", r.dur, "tijd"); put("#c_dist", r.dist, "afstand"); put("#c_kcal", r.kcal, "kcal"); put("#c_lvl", r.speed, "snelheid");
+    if (r.incline !== "" && !/Helling/.test($("#c_notes").value)) $("#c_notes").value = [$("#c_notes").value.trim(), `Helling ${String(r.incline).replace(".", ",")}%`].filter(Boolean).join(" · ");
+    const out = $("#ocrOut"); out.hidden = false;
+    out.textContent = got.length ? `Ingevuld: ${got.join(", ")}${r.miles ? " (mijlen omgerekend naar km, mph naar km/u)" : ""}. Controleer even en tik op Opslaan.` : "Geen getallen herkend. Vul ze hieronder zelf in.";
+    toast(got.length ? "Scherm uitgelezen" : "Niets herkend");
+  };
+  $("#ocrText").addEventListener("input", (e) => { if (e.target.value.trim()) fill(e.target.value); });
+  $("#ocrPaste").onclick = async () => {
+    try { const t = await navigator.clipboard.readText(); if (!t.trim()) throw 0; $("#ocrText").value = t; fill(t); }
+    catch (e) { $("#ocrText").focus(); toast("Plakken lukte niet: houd het tekstvak vast en kies Plak"); }
+  };
   $("#cSave").onclick = () => {
     const v = (id) => num($(id).value);
     const rec = { module: "cardio", exercise: it.name, duration_min: v("#c_dur"), distance_km: v("#c_dist"), kcal: v("#c_kcal"), level: v("#c_lvl"),
@@ -928,6 +949,26 @@ AFTER.cardioLog = () => {
     addSession(rec); toast("Cardio opgeslagen"); go("cardioLog", { id: it.id });
   };
 };
+/* Tekst van een Matrix-scherm (via Live Text van de iPhone) omzetten naar duur, afstand, kcal, snelheid en helling */
+function parseMatrix(text) {
+  const t = String(text).toUpperCase().replace(/,/g, ".").replace(/[Oo](?=\d)|(?<=\d)[Oo]/g, "0");
+  const n = (re) => { const m = t.match(re); return m ? parseFloat(m[1]) : ""; };
+  const r1 = (x) => x === "" ? "" : Math.round(x * 10) / 10;
+  const miles = /\bMI\b|MPH|MILE/.test(t);
+  let dist = n(/(\d+(?:\.\d+)?)\s*(?:MI|MILES?|KM)\b/);
+  let speed = n(/(\d+(?:\.\d+)?)\s*(?:MPH|KM\/?H|KPH)/);
+  if (miles) { if (dist !== "") dist = Math.round(dist * 1.609344 * 100) / 100; if (speed !== "") speed = speed * 1.609344; }
+  const kcal = n(/(\d+)\s*(?:K?CAL|KCAL|CALORIES)/);
+  const incline = n(/(\d+(?:\.\d+)?)\s*%/);
+  /* Tijd: de eerste mm:ss of u:mm:ss die geen tempo (per mijl/km) is */
+  let dur = "";
+  const re = /(\d{1,2}):(\d{2})(?::(\d{2}))?(?!\s*\/)/g; let m;
+  while ((m = re.exec(t))) {
+    if (/PACE|TEMPO/.test(t.slice(Math.max(0, m.index - 8), m.index))) continue;
+    dur = m[3] ? (+m[1]) * 60 + (+m[2]) + (+m[3]) / 60 : (+m[1]) + (+m[2]) / 60; break;
+  }
+  return { dur: r1(dur), dist, kcal, speed: r1(speed), incline, miles };
+}
 function shrink(file, max, q) {
   return new Promise((res, rej) => {
     const r = new FileReader();
@@ -1725,7 +1766,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v16";
+  const APP_VERSION = "cabana-v17";
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
     fetch("sw.js", { cache: "no-store" }).then(r => r.text()).then(t => { const m = t.match(/cabana-v\d+/); if (m && m[0] !== APP_VERSION) location.reload(); }).catch(() => {});
