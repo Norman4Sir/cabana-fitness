@@ -883,6 +883,11 @@ VIEWS.cardioLog = () => {
       <label class="f">Kcal (toestel)<input class="i" id="c_kcal" inputmode="numeric" placeholder="280"></label>
       <label class="f">Niveau / snelheid<input class="i" id="c_lvl" inputmode="decimal" placeholder="8"></label>
     </div>
+    <div class="row" id="c_stepRow"${/climb|step/i.test(it.name) ? "" : " hidden"}>
+      <label class="f">Verdiepingen<input class="i" id="c_floors" inputmode="numeric" placeholder="30"></label>
+      <label class="f">Stappen/min<input class="i" id="c_spm" inputmode="numeric" placeholder="100"></label>
+      <label class="f">Stappen<input class="i" id="c_steps" inputmode="numeric" placeholder="2600"></label>
+    </div>
   </section>
   <section class="card">
     <fieldset><legend><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="5" width="12" height="14" rx="4"/><path d="M9 5V2h6v3M9 19v3h6v-3"/></svg>Apple Watch</legend>
@@ -916,6 +921,7 @@ AFTER.cardioLog = () => {
     put("#c_dur", r.dur, "tijd"); put("#c_dist", r.dist, "afstand"); put("#c_kcal", r.kcal, "kcal"); put("#c_lvl", r.speed, r.miles || /MPH|KM\/?H/i.test(text) ? "snelheid" : "niveau");
     if (r.incline !== "" && !/Helling/.test($("#c_notes").value)) $("#c_notes").value = [$("#c_notes").value.trim(), `Helling ${String(r.incline).replace(".", ",")}%`].filter(Boolean).join(" · ");
     const hrIn = $("#w_hr"); if (r.hr !== "" && (!hrIn.value || hrIn.dataset.auto)) { hrIn.value = r.hr; hrIn.dataset.auto = "1"; got.push("hartslag"); }
+    if (r.floors !== "" || r.spm !== "" || r.steps !== "") { $("#c_stepRow").hidden = false; put("#c_floors", r.floors, "verdiepingen"); put("#c_spm", r.spm, "stappen/min"); put("#c_steps", r.steps, "stappen"); }
     if (r.extra.length && !/Scherm:/.test($("#c_notes").value)) $("#c_notes").value = [$("#c_notes").value.trim(), `Scherm: ${r.extra.join(" · ")}`].filter(Boolean).join(" · ");
     const out = $("#ocrOut"); out.hidden = false;
     out.textContent = got.length ? `Ingevuld: ${got.join(", ")}${r.miles ? " (mijlen omgerekend naar km, mph naar km/u)" : ""}. Controleer even en tik op Opslaan.` : "Geen getallen herkend. Vul ze hieronder zelf in.";
@@ -929,7 +935,7 @@ AFTER.cardioLog = () => {
   $("#cSave").onclick = () => {
     const v = (id) => num($(id).value);
     const rec = { module: "cardio", exercise: it.name, duration_min: v("#c_dur"), distance_km: v("#c_dist"), kcal: v("#c_kcal"), level: v("#c_lvl"),
-      watch_active_kcal: v("#w_kcal"), watch_total_kcal: v("#w_tot"), hr_avg: v("#w_hr"), hr_max: v("#w_hrmax"), notes: $("#c_notes").value.trim(),
+      watch_active_kcal: v("#w_kcal"), watch_total_kcal: v("#w_tot"), hr_avg: v("#w_hr"), hr_max: v("#w_hrmax"), floors: v("#c_floors"), steps_per_min: v("#c_spm"), steps: v("#c_steps"), notes: $("#c_notes").value.trim(),
       photo: pendingPhoto || "", source: pendingPhoto ? "foto+handmatig" : "handmatig" };
     if (!rec.duration_min && !rec.distance_km && !rec.kcal && !rec.photo) return toast("Vul minstens duur, afstand of kcal in, of maak een foto");
     addSession(rec); toast("Cardio opgeslagen"); go("cardioLog", { id: it.id });
@@ -963,8 +969,11 @@ function parseMatrix(text) {
   const after = loose.filter(x => tm >= 0 && x.i > tm && Number.isInteger(+x.v));
   if (after[0] && +after[0].v >= 40 && +after[0].v <= 220) { hr = +after[0].v; loose = loose.filter(x => x !== after[0]); after.shift(); }
   if (kc === "" && after[0]) { kc = +after[0].v; loose = loose.filter(x => x !== after[0]); }
+  /* Stepper (Premium LED): de overige getallen staan in de volgorde verdiepingen, stappen per minuut, totaal stappen */
+  let floors = "", spm = "", steps = "";
+  if (speed === "" && !miles && level !== "") { const ints = loose.filter(x => Number.isInteger(+x.v)); [floors, spm, steps] = [0, 1, 2].map(k => ints[k] ? +ints[k].v : ""); loose = loose.filter(x => !ints.slice(0, 3).includes(x)); }
   const inc2 = incline !== "" ? incline : n(/(\d+(?:\.\d+)?)\s*X(?![A-Z])/);
-  return { dur: r1(dur), dist, kcal: kc, speed: r1(speed) !== "" ? r1(speed) : level, incline: inc2, hr, miles, extra: loose.map(x => x.v) };
+  return { dur: r1(dur), dist, kcal: kc, speed: r1(speed) !== "" ? r1(speed) : level, incline: inc2, hr, miles, floors, spm, steps, extra: loose.map(x => x.v) };
 }
 function shrink(file, max, q) {
   return new Promise((res, rej) => {
@@ -1228,7 +1237,7 @@ const COLS = [
   ["module", s => MODULES[s.module] || s.module], ["oefening", s => s.exercise], ["sets", s => s.sets], ["herhalingen", s => s.reps], ["gewicht_kg", s => s.weight_kg],
   ["volume_kg", vol], ["seconden", s => s.seconds], ["pullup_stap", s => s.step],
   ["duur_min", s => s.duration_min], ["afstand_km", s => s.distance_km], ["kcal_toestel", s => s.kcal], ["niveau", s => s.level],
-  ["watch_actieve_kcal", s => s.watch_active_kcal], ["watch_totaal_kcal", s => s.watch_total_kcal], ["hartslag_gem", s => s.hr_avg], ["hartslag_max", s => s.hr_max],
+  ["watch_actieve_kcal", s => s.watch_active_kcal], ["watch_totaal_kcal", s => s.watch_total_kcal], ["hartslag_gem", s => s.hr_avg], ["hartslag_max", s => s.hr_max], ["verdiepingen", s => s.floors], ["stappen_per_min", s => s.steps_per_min], ["stappen", s => s.steps],
   ["toestel_instellingen", s => s.settings || [s.setting_seat && "Zithoogte=" + s.setting_seat, s.setting_back && "Rugleuning=" + s.setting_back, s.setting_extra && "Overig=" + s.setting_extra].filter(Boolean).join("; ")],
   ["foto", s => s.photo ? "ja" : ""], ["bron", s => s.source], ["notities", s => s.notes], ["id", s => s.id]
 ];
@@ -1763,7 +1772,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v19";
+  const APP_VERSION = "cabana-v20";
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
     fetch("sw.js", { cache: "no-store" }).then(r => r.text()).then(t => { const m = t.match(/cabana-v\d+/); if (m && m[0] !== APP_VERSION) location.reload(); }).catch(() => {});
