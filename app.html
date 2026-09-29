@@ -915,6 +915,7 @@ AFTER.cardioLog = () => {
     const put = (id, val, label) => { if (val !== "" && val != null) { $(id).value = String(val).replace(".", ","); got.push(label); } };
     put("#c_dur", r.dur, "tijd"); put("#c_dist", r.dist, "afstand"); put("#c_kcal", r.kcal, "kcal"); put("#c_lvl", r.speed, r.miles || /MPH|KM\/?H/i.test(text) ? "snelheid" : "niveau");
     if (r.incline !== "" && !/Helling/.test($("#c_notes").value)) $("#c_notes").value = [$("#c_notes").value.trim(), `Helling ${String(r.incline).replace(".", ",")}%`].filter(Boolean).join(" · ");
+    const hrIn = $("#w_hr"); if (r.hr !== "" && (!hrIn.value || hrIn.dataset.auto)) { hrIn.value = r.hr; hrIn.dataset.auto = "1"; got.push("hartslag"); }
     if (r.extra.length && !/Scherm:/.test($("#c_notes").value)) $("#c_notes").value = [$("#c_notes").value.trim(), `Scherm: ${r.extra.join(" · ")}`].filter(Boolean).join(" · ");
     const out = $("#ocrOut"); out.hidden = false;
     out.textContent = got.length ? `Ingevuld: ${got.join(", ")}${r.miles ? " (mijlen omgerekend naar km, mph naar km/u)" : ""}. Controleer even en tik op Opslaan.` : "Geen getallen herkend. Vul ze hieronder zelf in.";
@@ -953,15 +954,17 @@ function parseMatrix(text) {
     dur = m[3] ? (+m[1]) * 60 + (+m[2]) + (+m[3]) / 60 : (+m[1]) + (+m[2]) / 60; break;
   }
   /* Schermen met icoontjes i.p.v. woorden (Matrix LED-console): eerste losse getal voor de tijd = niveau, de rest bewaren in de notitie */
-  let level = "", extra = [];
-  if (speed === "") {
-    const tm = t.search(/\d{1,2}:\d{2}/);
-    const loose = [...t.matchAll(/(?<![\d:.])(\d+(?:\.\d+)?)(?![\d:.]|\s*(?:%|K?CAL|MI|KM|MPH))/g)].map(x => ({ v: x[1], i: x.index }));
-    const first = loose.find(x => tm < 0 || x.i < tm);
-    if (first) level = parseFloat(first.v);
-    extra = loose.filter(x => x !== first).map(x => x.v);
-  }
-  return { dur: r1(dur), dist, kcal, speed: r1(speed) !== "" ? r1(speed) : level, incline, miles, extra };
+  /* Matrix Premium LED-console zet icoontjes i.p.v. woorden: links 2e rij = hartslag, rechts 2e rij = kcal (vlammetje).
+     Losse getallen zonder eenheid: voor de tijd = niveau, na de tijd = hartslag en dan kcal; de rest gaat naar de notitie. */
+  let level = "", hr = "", kc = kcal;
+  const tm = t.search(/\d{1,2}:\d{2}/);
+  let loose = [...t.matchAll(/(?<![\d:.])(\d+(?:\.\d+)?)(?![\d:.]|\s*(?:[%X]|K?CAL|MI|KM|MPH))/g)].map(x => ({ v: x[1], i: x.index }));
+  if (speed === "" && incline === "") { const f = loose.find(x => tm < 0 || x.i < tm); if (f) { level = parseFloat(f.v); loose = loose.filter(x => x !== f); } }
+  const after = loose.filter(x => tm >= 0 && x.i > tm && Number.isInteger(+x.v));
+  if (after[0] && +after[0].v >= 40 && +after[0].v <= 220) { hr = +after[0].v; loose = loose.filter(x => x !== after[0]); after.shift(); }
+  if (kc === "" && after[0]) { kc = +after[0].v; loose = loose.filter(x => x !== after[0]); }
+  const inc2 = incline !== "" ? incline : n(/(\d+(?:\.\d+)?)\s*X(?![A-Z])/);
+  return { dur: r1(dur), dist, kcal: kc, speed: r1(speed) !== "" ? r1(speed) : level, incline: inc2, hr, miles, extra: loose.map(x => x.v) };
 }
 function shrink(file, max, q) {
   return new Promise((res, rej) => {
@@ -1760,7 +1763,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v18";
+  const APP_VERSION = "cabana-v19";
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
     fetch("sw.js", { cache: "no-store" }).then(r => r.text()).then(t => { const m = t.match(/cabana-v\d+/); if (m && m[0] !== APP_VERSION) location.reload(); }).catch(() => {});
