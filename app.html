@@ -807,7 +807,7 @@ VIEWS.home = () => {
 };
 
 function describe(s) {
-  if (s.module === "cardio") return [s.duration_min && s.duration_min + " min", s.distance_km && kg(s.distance_km) + " km", s.kcal && s.kcal + " kcal", s.hr_avg && "♥ " + s.hr_avg].filter(Boolean).join(" · ") || "Foto opgeslagen";
+  if (s.module === "cardio") return [s.duration_min && kg(s.duration_min) + " min", s.distance_km && kg(s.distance_km) + " km", s.kcal && s.kcal + " kcal", s.hr_avg && "♥ " + s.hr_avg].filter(Boolean).join(" · ") || "Foto opgeslagen";
   if (s.exercise === "Dead Hang") return s.seconds + " sec";
   if (s.module === "goals" && s.kind === "stretch") return s.seconds + " sec";
   return `${s.sets} × ${s.reps}${s.weight_kg !== "" && s.weight_kg != null ? " @ " + kg(s.weight_kg) + " kg" : ""}`;
@@ -913,8 +913,9 @@ AFTER.cardioLog = () => {
   const fill = (text) => {
     const r = parseMatrix(text), got = [];
     const put = (id, val, label) => { if (val !== "" && val != null) { $(id).value = String(val).replace(".", ","); got.push(label); } };
-    put("#c_dur", r.dur, "tijd"); put("#c_dist", r.dist, "afstand"); put("#c_kcal", r.kcal, "kcal"); put("#c_lvl", r.speed, "snelheid");
+    put("#c_dur", r.dur, "tijd"); put("#c_dist", r.dist, "afstand"); put("#c_kcal", r.kcal, "kcal"); put("#c_lvl", r.speed, r.miles || /MPH|KM\/?H/i.test(text) ? "snelheid" : "niveau");
     if (r.incline !== "" && !/Helling/.test($("#c_notes").value)) $("#c_notes").value = [$("#c_notes").value.trim(), `Helling ${String(r.incline).replace(".", ",")}%`].filter(Boolean).join(" · ");
+    if (r.extra.length && !/Scherm:/.test($("#c_notes").value)) $("#c_notes").value = [$("#c_notes").value.trim(), `Scherm: ${r.extra.join(" · ")}`].filter(Boolean).join(" · ");
     const out = $("#ocrOut"); out.hidden = false;
     out.textContent = got.length ? `Ingevuld: ${got.join(", ")}${r.miles ? " (mijlen omgerekend naar km, mph naar km/u)" : ""}. Controleer even en tik op Opslaan.` : "Geen getallen herkend. Vul ze hieronder zelf in.";
     toast(got.length ? "Scherm uitgelezen" : "Niets herkend");
@@ -951,7 +952,16 @@ function parseMatrix(text) {
     if (/PACE|TEMPO/.test(t.slice(Math.max(0, m.index - 8), m.index))) continue;
     dur = m[3] ? (+m[1]) * 60 + (+m[2]) + (+m[3]) / 60 : (+m[1]) + (+m[2]) / 60; break;
   }
-  return { dur: r1(dur), dist, kcal, speed: r1(speed), incline, miles };
+  /* Schermen met icoontjes i.p.v. woorden (Matrix LED-console): eerste losse getal voor de tijd = niveau, de rest bewaren in de notitie */
+  let level = "", extra = [];
+  if (speed === "") {
+    const tm = t.search(/\d{1,2}:\d{2}/);
+    const loose = [...t.matchAll(/(?<![\d:.])(\d+(?:\.\d+)?)(?![\d:.]|\s*(?:%|K?CAL|MI|KM|MPH))/g)].map(x => ({ v: x[1], i: x.index }));
+    const first = loose.find(x => tm < 0 || x.i < tm);
+    if (first) level = parseFloat(first.v);
+    extra = loose.filter(x => x !== first).map(x => x.v);
+  }
+  return { dur: r1(dur), dist, kcal, speed: r1(speed) !== "" ? r1(speed) : level, incline, miles, extra };
 }
 function shrink(file, max, q) {
   return new Promise((res, rej) => {
@@ -1750,7 +1760,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v17";
+  const APP_VERSION = "cabana-v18";
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
     fetch("sw.js", { cache: "no-store" }).then(r => r.text()).then(t => { const m = t.match(/cabana-v\d+/); if (m && m[0] !== APP_VERSION) location.reload(); }).catch(() => {});
