@@ -1,0 +1,1715 @@
+<title>Cabana Fitness</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;700&display=swap">
+<style>
+/* Layout: één kolom, sticky kop met profielkeuze, 2x2 grote strandtegels, schermen schuiven eronder in. */
+:root {
+  --bg: #eef6f4;          /* zeeschuim */
+  --surface: #ffffff;
+  --surface-2: #e2efec;
+  --ink: #0f3440;         /* diepzee */
+  --muted: #58767e;
+  --line: #cfe1dd;
+  --lagoon: #0b8f9c;
+  --sun: #f7a933;
+  --coral: #f2644d;
+  --palm: #3f8f5a;
+  --deep: #1d4e89;
+  --sand: #f3e3c3;
+  --ok: #2f8a4e;
+  --danger: #c43d2b;
+  --me: var(--lagoon);
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Helvetica Neue", system-ui, sans-serif;
+  --font-body: "Figtree", -apple-system, "Helvetica Neue", system-ui, sans-serif;
+  --r: 22px;
+  --tap: 56px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0a1d24; --surface: #11303a; --surface-2: #173c47; --ink: #e4f3f1; --muted: #8fb0b5;
+  --line: #24505b; --lagoon: #2bb7c3; --sun: #f7b24a; --coral: #f47a64; --palm: #5db877; --deep: #4f86c9;
+  --sand: #3a3322; --ok: #5cc27d; --danger: #f07360; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #0a1d24; --surface: #11303a; --surface-2: #173c47; --ink: #e4f3f1; --muted: #8fb0b5;
+  --line: #24505b; --lagoon: #2bb7c3; --sun: #f7b24a; --coral: #f47a64; --palm: #5db877; --deep: #4f86c9;
+  --sand: #3a3322; --ok: #5cc27d; --danger: #f07360; color-scheme: dark;
+}
+body.p-paula { --me: var(--coral); }
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { background: var(--bg); color: var(--ink); }
+body { margin: 0; font-family: var(--font-body); font-size: 17px; line-height: 1.45; -webkit-text-size-adjust: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--sun); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--font-display); line-height: 1.1; margin: 0; text-wrap: balance; }
+
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  backdrop-filter: blur(24px) saturate(180%); -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border-bottom: 1px solid rgb(255 255 255 / .45);
+  box-shadow: 0 8px 24px -16px rgb(20 30 50 / .35);
+}
+.top-in { max-width: 720px; margin: 0 auto; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; background: none; border: 0; padding: 0; text-align: left; }
+.brand svg { flex: none; }
+.brand b { font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: -.01em; white-space: nowrap; }
+.brand small { display: block; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.seg { display: flex; background: color-mix(in srgb, var(--surface-2) 70%, transparent); border-radius: 999px; padding: 4px; gap: 2px; }
+.seg button { border: 0; background: none; padding: 8px 14px; min-height: 44px; border-radius: 999px; font-weight: 700; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 4px rgb(0 0 0 / .12); }
+.seg button[data-p="patrick"][aria-pressed="true"] { color: var(--lagoon); }
+.seg button[data-p="paula"][aria-pressed="true"] { color: var(--coral); }
+.iconbtn { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); display: grid; place-items: center; flex: none; }
+
+main { max-width: 720px; margin: 0 auto; padding: 16px 16px 48px; display: flex; flex-direction: column; gap: 18px; }
+
+.hello { display: flex; justify-content: space-between; align-items: end; gap: 12px; }
+.hello h1 { font-size: 30px; font-weight: 800; }
+.hello h1 span { color: var(--me); }
+.hello p { margin: 2px 0 0; color: var(--ink); opacity: .75; font-size: 15px; }
+
+/* ---------- Strand-achtergrond: zonsondergang, zee, zand (vast achter alles) ---------- */
+html { background: #ffd9bd; }
+body { background: transparent; min-height: 100vh; }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(circle at 80% 13%, #fff6cf 0 5.5%, rgb(255 214 140 / .85) 9%, rgb(255 190 120 / 0) 26%),
+    radial-gradient(60% 40% at 5% 30%, rgb(255 120 110 / .55), transparent 70%),
+    radial-gradient(55% 35% at 100% 62%, rgb(40 200 205 / .55), transparent 70%),
+    radial-gradient(70% 30% at 20% 95%, rgb(255 226 170 / .9), transparent 70%),
+    linear-gradient(180deg, #ffdcbf 0%, #ffc3aa 20%, #ffae9e 34%, #9fdcd6 50%, #4cbcc6 64%, #7fd0c9 74%, #f3dcb4 86%, #f8e8ca 100%);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body::before { background:
+    radial-gradient(circle at 80% 13%, #ffe2b0 0 4%, rgb(255 170 120 / .5) 8%, transparent 24%),
+    radial-gradient(60% 40% at 5% 30%, rgb(190 70 110 / .45), transparent 70%),
+    radial-gradient(55% 35% at 100% 62%, rgb(20 150 165 / .5), transparent 70%),
+    linear-gradient(180deg, #221c42 0%, #43295a 22%, #7a3a5c 34%, #10485a 52%, #0b3440 70%, #1c2a2c 88%, #141d1f 100%); }
+  :root:not([data-theme="light"]) { background: #221c42; } }
+:root[data-theme="dark"] body::before { background:
+    radial-gradient(circle at 80% 13%, #ffe2b0 0 4%, rgb(255 170 120 / .5) 8%, transparent 24%),
+    radial-gradient(60% 40% at 5% 30%, rgb(190 70 110 / .45), transparent 70%),
+    radial-gradient(55% 35% at 100% 62%, rgb(20 150 165 / .5), transparent 70%),
+    linear-gradient(180deg, #221c42 0%, #43295a 22%, #7a3a5c 34%, #10485a 52%, #0b3440 70%, #1c2a2c 88%, #141d1f 100%); }
+
+/* Strandfoto als achtergrond (keuze onder Data & export); de getekende zonsondergang blijft de andere optie */
+:root body.bg-photo::before { background:
+    linear-gradient(180deg, rgb(255 255 255 / 0) 0%, rgb(255 255 255 / .12) 45%, rgb(255 244 228 / .38) 100%),
+    url("img/beach.jpg") center 42% / cover no-repeat; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.bg-photo::before { background:
+    linear-gradient(180deg, rgb(8 22 40 / .55), rgb(6 18 30 / .68)),
+    url("img/beach.jpg") center 42% / cover no-repeat; } }
+:root[data-theme="dark"] body.bg-photo::before { background: linear-gradient(180deg, rgb(8 22 40 / .55), rgb(6 18 30 / .68)), url("img/beach.jpg") center 42% / cover no-repeat; }
+body.bg-photo .hello h1, body.bg-photo .hello p, body.bg-photo .head h1 { text-shadow: 0 1px 14px rgb(255 255 255 / .75); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.bg-photo :is(.hello h1, .hello p, .head h1) { text-shadow: 0 1px 12px rgb(0 0 0 / .55); } }
+:root[data-theme="dark"] body.bg-photo :is(.hello h1, .hello p, .head h1) { text-shadow: 0 1px 12px rgb(0 0 0 / .55); }
+
+/* Bewegende golfjes over de strandfoto: een schuimrand die aanrolt op het zand en weer wegtrekt */
+body.bg-photo { --surf: .8; }
+body.bg-photo::after {
+  content: ""; position: fixed; left: -40%; width: 180%; top: 67vh; height: 16vh; z-index: -1; pointer-events: none; opacity: 0;
+  background: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 60%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E%3ClinearGradient id=%22f%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23fff%22 stop-opacity=%22.95%22/%3E%3Cstop offset=%22.35%22 stop-color=%22%23fff%22 stop-opacity=%22.45%22/%3E%3Cstop offset=%221%22 stop-color=%22%23fff%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d=%22M0 22 Q25 10 50 20 T100 20 T150 18 T200 21 T250 19 T300 20 T350 18 T400 22 V60 H0Z%22 fill=%22url%28%23f%29%22/%3E%3Cpath d=%22M0 22 Q25 10 50 20 T100 20 T150 18 T200 21 T250 19 T300 20 T350 18 T400 22%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.5%22 stroke-opacity=%22.9%22/%3E%3C/svg%3E") repeat-x 0 0 / 420px 100%, url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 400 60%22 preserveAspectRatio=%22none%22%3E%3Cdefs%3E%3ClinearGradient id=%22f%22 x1=%220%22 y1=%220%22 x2=%220%22 y2=%221%22%3E%3Cstop offset=%220%22 stop-color=%22%23fff%22 stop-opacity=%22.95%22/%3E%3Cstop offset=%22.35%22 stop-color=%22%23fff%22 stop-opacity=%22.45%22/%3E%3Cstop offset=%221%22 stop-color=%22%23fff%22 stop-opacity=%220%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d=%22M0 22 Q25 10 50 20 T100 20 T150 18 T200 21 T250 19 T300 20 T350 18 T400 22 V60 H0Z%22 fill=%22url%28%23f%29%22/%3E%3Cpath d=%22M0 22 Q25 10 50 20 T100 20 T150 18 T200 21 T250 19 T300 20 T350 18 T400 22%22 fill=%22none%22 stroke=%22%23fff%22 stroke-width=%222.5%22 stroke-opacity=%22.9%22/%3E%3C/svg%3E") repeat-x 190px 38% / 340px 70%;
+  animation: surf 7s ease-in-out infinite; will-change: transform, opacity;
+}
+@keyframes surf {
+  0% { transform: translate3d(0, 4vh, 0) scaleY(.7); opacity: 0; }
+  30% { opacity: var(--surf); }
+  55% { transform: translate3d(-70px, -1.5vh, 0) scaleY(1); opacity: calc(var(--surf) * .8); }
+  100% { transform: translate3d(-140px, 5vh, 0) scaleY(.7); opacity: 0; }
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) body.bg-photo { --surf: .35; } }
+:root[data-theme="dark"] body.bg-photo { --surf: .35; }
+/* golf onderin elke tegel deint mee */
+.tile::after { animation: tilewave 5.5s ease-in-out infinite; }
+.tiles .tile:nth-child(2)::after { animation-delay: -1.2s; }
+.tiles .tile:nth-child(3)::after { animation-delay: -2.6s; }
+.tiles .tile:nth-child(4)::after { animation-delay: -3.8s; }
+.tiles .tile:nth-child(5)::after { animation-delay: -.6s; }
+@keyframes tilewave { 0%, 100% { transform: translateX(-4%) scaleY(1); } 50% { transform: translateX(4%) scaleY(1.14); } }
+@media (prefers-reduced-motion: reduce) { body.bg-photo::after, .tile::after { animation: none; } }
+
+/* ---------- Liquid glass tegels ---------- */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.tile {
+  --tint: 242 100 77; --tint2: 247 169 51; --top: #fff3c4; --acc: #ffd166;
+  position: relative; overflow: hidden; isolation: isolate;
+  border: 1px solid rgb(255 255 255 / .6); border-radius: 28px;
+  min-height: 272px; padding: 14px 14px 16px; text-align: left; color: #fff;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 4px;
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / .38), rgb(255 255 255 / .04) 42%),
+    linear-gradient(155deg, rgb(var(--tint) / .78), rgb(var(--tint2) / .55));
+  -webkit-backdrop-filter: blur(22px) saturate(180%); backdrop-filter: blur(22px) saturate(180%);
+  box-shadow:
+    inset 0 1.5px 0 rgb(255 255 255 / .75),
+    inset 0 -1px 0 rgb(255 255 255 / .25),
+    inset 0 -18px 30px -18px rgb(255 255 255 / .35),
+    0 22px 40px -18px rgb(var(--tint) / .85),
+    0 6px 14px -6px rgb(20 30 50 / .3);
+  transition: transform .28s cubic-bezier(.2, .9, .3, 1.35), box-shadow .2s ease, filter .2s ease;
+  -webkit-user-select: none; user-select: none; touch-action: manipulation;
+}
+.tile::before { /* glansrand: licht dat over de bovenkant van het glas valt */
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 2;
+  background: linear-gradient(115deg, rgb(255 255 255 / .55) 0%, rgb(255 255 255 / 0) 22%, rgb(255 255 255 / 0) 70%, rgb(255 255 255 / .18) 100%);
+  mix-blend-mode: soft-light;
+}
+.tile::after { /* golf onderaan: het strand-accent */
+  content: ""; position: absolute; left: -15%; right: -15%; bottom: -44px; height: 96px; border-radius: 50%; z-index: -1;
+  background: rgb(255 255 255 / .16); pointer-events: none;
+}
+.tile .art { position: absolute; inset: 36px 0 auto; height: 132px; display: block; z-index: -1; pointer-events: none;
+  filter: drop-shadow(0 8px 10px rgb(0 0 0 / .18)); transition: transform .3s cubic-bezier(.2, .9, .3, 1.4); }
+.tile .art::before { content: ""; position: absolute; left: 50%; top: 50%; width: 118px; height: 118px; translate: -50% -50%; border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 255 255 / .38), rgb(255 255 255 / 0) 68%); }
+.tile .ill { position: relative; width: 100%; height: 100%; display: block; }
+.tile .tt { display: block; font-family: var(--font-display); line-height: 1.05; font-size: 20px; font-weight: 800; letter-spacing: -.01em; text-shadow: 0 1px 12px rgb(0 0 0 / .28); }
+.tile .ts { display: block; margin: 3px 0 0; font-size: 12.5px; line-height: 1.3; font-weight: 500; opacity: .95; text-shadow: 0 1px 8px rgb(0 0 0 / .3); }
+.tile .num { position: absolute; top: 12px; left: 12px; z-index: 3; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  padding: 4px 10px; border-radius: 999px; background: rgb(255 255 255 / .24); border: 1px solid rgb(255 255 255 / .45);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.tile .ripple { position: absolute; z-index: 1; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgb(255 255 255 / .75), rgb(255 255 255 / .25) 45%, rgb(255 255 255 / 0) 70%);
+  animation: ripple .6s cubic-bezier(.2, .7, .3, 1) forwards; }
+@keyframes ripple { from { transform: scale(1); opacity: 1; } to { transform: scale(26); opacity: 0; } }
+.tile:active, .tile.pressed {
+  transform: scale(.95) translateY(2px);
+  filter: brightness(1.08) saturate(1.1);
+  border-color: rgb(255 255 255 / .95);
+  box-shadow:
+    inset 0 1.5px 0 rgb(255 255 255 / .9),
+    inset 0 0 0 2px rgb(255 255 255 / .55),
+    inset 0 -18px 30px -12px rgb(255 255 255 / .5),
+    0 8px 18px -10px rgb(var(--tint) / .9),
+    0 0 0 5px rgb(var(--tint) / .28);
+  transition-duration: .08s;
+}
+.tile:active .art, .tile.pressed .art { transform: translateY(-5px) scale(1.06); transition-duration: .12s; }
+.t-cardio { --tint: 242 94 70; --tint2: 250 170 55; --top: #fff3c4; }
+.t-machine { --tint: 8 150 165; --tint2: 20 105 150; --top: #ffd166; }
+.t-free { --tint: 38 82 160; --tint2: 105 70 170; --top: #ff9270; }
+.t-goals { --tint: 44 150 100; --tint2: 30 150 150; --top: #ffd6e7; }
+
+.card { background: color-mix(in srgb, var(--surface) 80%, transparent); -webkit-backdrop-filter: blur(24px) saturate(160%); backdrop-filter: blur(24px) saturate(160%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .5), 0 12px 30px -18px rgb(20 30 50 / .4); border: 1px solid color-mix(in srgb, #fff 55%, var(--line)); border-radius: var(--r); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.card h3 { font-size: 18px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin: 0; }
+.muted { color: var(--muted); }
+.small { font-size: 14px; }
+
+.back { align-self: flex-start; border: 0; background: none; color: var(--me); font-weight: 700; padding: 8px 0; min-height: 44px; display: flex; align-items: center; gap: 4px; }
+.head h1 { font-size: 28px; font-weight: 800; }
+.head p { margin: 4px 0 0; color: var(--muted); }
+
+.list { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.item {
+  min-height: 84px; border-radius: 18px; border: 1px solid color-mix(in srgb, #fff 55%, var(--line)); background: color-mix(in srgb, var(--surface) 78%, transparent);
+  -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); box-shadow: inset 0 1px 0 rgb(255 255 255 / .5), 0 8px 20px -14px rgb(20 30 50 / .4);
+  transition: transform .2s cubic-bezier(.2, .9, .3, 1.35);
+  padding: 12px 14px; text-align: left; display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
+}
+.item b { font-size: 16px; line-height: 1.2; }
+.item span { font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.item.has-img { padding-top: 0; overflow: hidden; }
+.item .thumb { max-width: none; width: calc(100% + 28px); margin: 0 -14px 6px; height: 96px; object-fit: cover; object-position: center 30%; display: block; }
+.item .nl { font-size: 12px; }
+.plate { padding: 12px; }
+.plate summary { display: flex; gap: 12px; align-items: center; cursor: pointer; list-style: none; min-height: 56px; }
+.plate summary::-webkit-details-marker { display: none; }
+.plate summary > img { width: 64px; height: 64px; object-fit: cover; border-radius: 12px; flex: none; }
+.plate summary > span { display: flex; flex-direction: column; min-width: 0; }
+.plate summary > span::after { content: "Tik voor foto en stappen"; font-size: 12px; color: var(--me); font-weight: 700; }
+.plate[open] summary > span::after { content: "Tik om te sluiten"; }
+.plate .plate-big { width: 100%; max-height: 70vh; object-fit: contain; border-radius: 14px; background: #000; }
+.plate ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+.item:active { transform: scale(.97); }
+.item.add { border-style: dashed; background: color-mix(in srgb, var(--surface) 35%, transparent); color: var(--muted); justify-content: center; align-items: center; text-align: center; }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row > * { flex: 1 1 140px; min-width: 0; }
+label.f { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .02em; }
+input.i, select.i, textarea.i {
+  width: 100%; min-height: var(--tap); border-radius: 14px; border: 1px solid var(--line);
+  background: var(--bg); padding: 12px 14px; font-size: 18px; font-weight: 500; color: var(--ink);
+}
+textarea.i { min-height: 80px; resize: vertical; font-size: 16px; }
+input.i::placeholder, textarea.i::placeholder { color: var(--muted); opacity: .7; }
+
+.btn { min-height: var(--tap); border-radius: 16px; border: 0; padding: 0 20px; font-weight: 700; font-size: 18px; background: var(--surface-2); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn.primary { background: var(--me); color: #fff; }
+.btn.big { min-height: 68px; font-size: 20px; width: 100%; border-radius: 20px; }
+.btn.ghost { background: transparent; border: 1px solid var(--line); }
+.btn.danger { background: transparent; border: 1px solid var(--danger); color: var(--danger); }
+.btn:active { transform: scale(.98); }
+
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { min-height: 48px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--bg); font-weight: 700; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--me); border-color: var(--me); color: #fff; }
+
+/* Draaiknop: iOS-achtige scrollwielen met snap */
+.wheels { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 10px; }
+.wheelbox { display: flex; flex-direction: column; gap: 6px; align-items: stretch; min-width: 0; }
+.wheelbox > span { text-align: center; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.wheel { position: relative; height: 168px; border-radius: 18px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; }
+.wheel::before { content: ""; position: absolute; left: 6px; right: 6px; top: 60px; height: 48px; border-radius: 12px; background: color-mix(in srgb, var(--me) 16%, transparent); pointer-events: none; }
+.wheel::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(var(--bg), transparent 34%, transparent 66%, var(--bg)); }
+.wheel-list { height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory; scrollbar-width: none; overscroll-behavior: contain; padding-block: 60px; }
+.wheel-list::-webkit-scrollbar { display: none; }
+.wheel-list div { height: 48px; line-height: 48px; text-align: center; scroll-snap-align: center; font-family: var(--font-display); font-size: 22px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wheel-list div.on { color: var(--ink); font-size: 28px; font-weight: 800; }
+.step { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.step button { min-height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); font-size: 22px; font-weight: 700; }
+
+.summary { font-family: var(--font-display); font-size: 26px; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+.summary small { display: block; font-family: var(--font-body); font-size: 14px; font-weight: 500; color: var(--muted); }
+.hint { background: var(--sand); border-radius: 14px; padding: 10px 14px; font-size: 15px; }
+.hint b { color: var(--ink); }
+
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.settings-grid .wide { grid-column: 1 / -1; }
+
+.hist { display: flex; flex-direction: column; }
+.hist > div { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+.hist > div:first-child { border-top: 0; }
+.hist .l { min-width: 0; }
+.hist .l b { display: block; }
+.hist .l span { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+.hist .x { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--muted); flex: none; }
+.empty { color: var(--muted); font-size: 15px; margin: 0; }
+
+.photo { border: 2px dashed var(--line); border-radius: 18px; min-height: 150px; display: grid; place-items: center; text-align: center; padding: 16px; background: var(--bg); position: relative; overflow: hidden; }
+.photo img { max-width: 100%; max-height: 260px; border-radius: 12px; display: block; }
+.photo input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--sand); color: var(--ink); letter-spacing: .04em; }
+fieldset { border: 1px solid var(--line); border-radius: 18px; padding: 12px 14px 14px; margin: 0; display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+legend { font-weight: 700; padding: 0 6px; display: flex; align-items: center; gap: 6px; }
+
+.timer { font-family: var(--font-display); font-weight: 800; font-size: clamp(88px, 30vw, 150px); line-height: 1; text-align: center; font-variant-numeric: tabular-nums; letter-spacing: -.03em; }
+.timer small { font-size: .3em; color: var(--muted); letter-spacing: 0; }
+.timer.run { color: var(--me); }
+.timer.cd { color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.stats div { background: var(--bg); border-radius: 14px; padding: 10px 4px; }
+.stats b { display: block; font-family: var(--font-display); font-size: 24px; font-variant-numeric: tabular-nums; }
+.stats span { font-size: 12px; color: var(--muted); }
+
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stepc { border: 2px solid var(--line); border-radius: 18px; background: var(--bg); padding: 12px 8px; text-align: center; display: flex; flex-direction: column; gap: 2px; min-height: 96px; justify-content: center; }
+.stepc b { font-family: var(--font-display); font-size: 30px; line-height: 1; }
+.stepc span { font-size: 12px; color: var(--muted); }
+.stepc[aria-pressed="true"] { border-color: var(--me); background: color-mix(in srgb, var(--me) 12%, var(--surface)); }
+.stepc.done b::after { content: " ✓"; color: var(--ok); font-size: 18px; }
+
+pre.csv { margin: 0; max-height: 220px; overflow: auto; background: var(--bg); border: 1px solid var(--line); border-radius: 14px; padding: 12px; font-size: 12px; line-height: 1.5; white-space: pre; }
+
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translate(-50%, 20px); opacity: 0; background: var(--ink); color: var(--bg); padding: 14px 22px; border-radius: 999px; font-weight: 700; transition: .2s ease; z-index: 50; pointer-events: none; max-width: calc(100% - 32px); text-align: center; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+.confirm { background: color-mix(in srgb, var(--danger) 10%, var(--surface)); border-color: var(--danger); }
+
+/* ---------- Glas door de hele app: knoppen, velden, draaiknoppen, timers ---------- */
+:root {
+  --glass: color-mix(in srgb, var(--surface) 62%, transparent);
+  --glass-field: color-mix(in srgb, var(--surface) 50%, transparent);
+  --glass-edge: rgb(255 255 255 / .6);
+  --glass-hi: rgb(255 255 255 / .7);
+  --glass-blur: blur(20px) saturate(170%);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --glass: color-mix(in srgb, var(--surface) 58%, transparent); --glass-field: rgb(255 255 255 / .07); --glass-edge: rgb(255 255 255 / .16); --glass-hi: rgb(255 255 255 / .14); } }
+:root[data-theme="dark"] { --glass: color-mix(in srgb, var(--surface) 58%, transparent); --glass-field: rgb(255 255 255 / .07); --glass-edge: rgb(255 255 255 / .16); --glass-hi: rgb(255 255 255 / .14); }
+
+.card { background: var(--glass); border-color: var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-hi), 0 14px 32px -18px rgb(20 30 50 / .45); }
+.item { background: var(--glass); border-color: var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-hi), 0 8px 20px -14px rgb(20 30 50 / .4); }
+.top { border-bottom-color: var(--glass-edge); }
+
+/* velden en kleine vlakken: helder glas in het kaartglas */
+input.i, select.i, textarea.i, .chip, .wheel, .stats div, .stepc, .photo, pre.csv, .step button, .hist .x, .iconbtn {
+  background: var(--glass-field); border-color: var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 2px rgb(0 0 0 / .04);
+}
+input.i:focus, select.i:focus, textarea.i:focus { outline: none; border-color: var(--me); box-shadow: inset 0 1px 0 var(--glass-hi), 0 0 0 4px color-mix(in srgb, var(--me) 22%, transparent); }
+.photo { border-style: dashed; }
+.hint { background: color-mix(in srgb, var(--sand) 62%, transparent); border: 1px solid var(--glass-edge); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 1px 0 var(--glass-hi); }
+.badge { background: color-mix(in srgb, var(--sand) 70%, transparent); border: 1px solid var(--glass-edge); }
+fieldset { border-color: var(--glass-edge); background: rgb(255 255 255 / .06); }
+.hist > div { border-top-color: color-mix(in srgb, var(--line) 60%, transparent); }
+
+/* draaiknop: vervagen met een masker, zodat het glas eronder zichtbaar blijft */
+.wheel::after { display: none; }
+.wheel-list { -webkit-mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent); mask-image: linear-gradient(transparent, #000 32%, #000 68%, transparent); }
+.wheel::before { background: color-mix(in srgb, var(--me) 20%, rgb(255 255 255 / .25)); border: 1px solid var(--glass-edge); box-shadow: inset 0 1px 0 var(--glass-hi); }
+
+/* knoppen: gekleurd glas met glansrand */
+.btn, .chip, .stepc, .step button, .hist .x, .iconbtn, .seg button {
+  transition: transform .22s cubic-bezier(.2, .9, .3, 1.35), box-shadow .15s ease, filter .15s ease;
+}
+.btn {
+  background: var(--glass); border: 1px solid var(--glass-edge);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 8px 18px -12px rgb(20 30 50 / .45);
+}
+.btn.primary, .chip[aria-pressed="true"] {
+  background:
+    linear-gradient(170deg, rgb(255 255 255 / .38), rgb(255 255 255 / 0) 55%),
+    color-mix(in srgb, var(--me) 86%, transparent);
+  border-color: rgb(255 255 255 / .55); color: #fff; text-shadow: 0 1px 6px rgb(0 0 0 / .2);
+  box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .6), inset 0 -10px 18px -10px rgb(255 255 255 / .35), 0 12px 24px -12px color-mix(in srgb, var(--me) 90%, transparent);
+}
+.btn.ghost { background: var(--glass-field); }
+.btn.danger { background: color-mix(in srgb, var(--danger) 10%, var(--glass-field)); border-color: color-mix(in srgb, var(--danger) 70%, transparent); }
+.stepc[aria-pressed="true"] { background: color-mix(in srgb, var(--me) 18%, var(--glass-field)); border-color: var(--me); box-shadow: inset 0 1px 0 var(--glass-hi), 0 0 0 4px color-mix(in srgb, var(--me) 16%, transparent); }
+.seg { border: 1px solid var(--glass-edge); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: inset 0 1px 3px rgb(0 0 0 / .06); }
+.seg button[aria-pressed="true"] { background: var(--glass); box-shadow: inset 0 1px 0 var(--glass-hi), 0 2px 8px rgb(0 0 0 / .12); }
+.btn:active, .chip:active, .stepc:active, .step button:active, .hist .x:active, .iconbtn:active, .seg button:active {
+  transform: scale(.95); filter: brightness(1.08); transition-duration: .07s;
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 2px rgb(255 255 255 / .5), 0 0 0 4px color-mix(in srgb, var(--me) 22%, transparent);
+}
+
+
+/* timer en melding */
+.timer { text-shadow: 0 2px 18px rgb(255 255 255 / .45); }
+.timer.run { text-shadow: 0 0 28px color-mix(in srgb, var(--me) 45%, transparent); }
+.toast { background: rgb(12 36 46 / .74); color: #fff; border: 1px solid rgb(255 255 255 / .25);
+  -webkit-backdrop-filter: blur(18px) saturate(170%); backdrop-filter: blur(18px) saturate(170%); box-shadow: inset 0 1px 0 rgb(255 255 255 / .25), 0 14px 30px -10px rgb(0 0 0 / .45); }
+.confirm { background: color-mix(in srgb, var(--danger) 14%, var(--glass)); border-color: var(--danger); }
+.plate .plate-big { box-shadow: 0 10px 24px -12px rgb(0 0 0 / .5); }
+
+/* Fase 2: export-schermen */
+.sent { margin: 0; font-size: 14px; font-weight: 700; color: var(--palm); }
+.sent::before { content: "✓ "; }
+.how summary > span::after { content: "Tik om de stappen te zien"; }
+.how[open] summary > span::after { content: "Tik om te sluiten"; }
+.how summary b { font-size: 17px; }
+.how ol { margin: 4px 0 0; }
+/* ---------- Fase 3: toestel-foto's, lightbox, 5e tegel en trainingsschema's ---------- */
+.tile.wide { grid-column: 1 / -1; min-height: 200px; padding: 16px 18px 18px; }
+.tile.wide .art { inset: 4px 0 4px auto; width: 52%; height: auto; }
+.tile.wide .art::before { width: 150px; height: 150px; }
+.tile.wide .tt { font-size: 21px; max-width: 52%; }
+.tile.wide .ts { max-width: 48%; }
+.t-programs { --tint: 196 58 118; --tint2: 250 128 72; --top: #7fe0d2; --acc: #fff3c4; }
+/* Met de strandfoto: tegels lichter getint en minder wazig, zodat het strand door het glas heen loopt */
+body.bg-photo .tile {
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / .32), rgb(255 255 255 / .03) 42%),
+    linear-gradient(165deg, rgb(var(--tint) / .4) 0%, rgb(var(--tint2) / .2) 50%, rgb(var(--tint) / .28) 100%);
+  -webkit-backdrop-filter: blur(6px) saturate(175%); backdrop-filter: blur(6px) saturate(175%);
+  border-color: rgb(255 255 255 / .5);
+}
+body.bg-photo .tile .tt { text-shadow: 0 1px 3px rgb(0 0 0 / .25), 0 2px 16px rgb(0 0 0 / .35); }
+body.bg-photo .tile .ts { text-shadow: 0 1px 2px rgb(0 0 0 / .3), 0 1px 10px rgb(0 0 0 / .35); }
+
+/* grote toestelfoto meteen bovenaan, met je eigen instellingen erop */
+.hero { padding: 0; overflow: hidden; gap: 0; }
+.hero-img { position: relative; display: block; width: 100%; border: 0; padding: 0; background: #0b1216; border-radius: 0; }
+.hero-img img { width: 100%; height: 280px; object-fit: cover; object-position: center 35%; display: block; }
+.hero-img::after { content: ""; position: absolute; inset: auto 0 0; height: 55%; background: linear-gradient(transparent, rgb(0 0 0 / .55)); pointer-events: none; }
+.glasspill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 999px; font-size: 13px; font-weight: 700; color: #fff;
+  background: rgb(255 255 255 / .18); border: 1px solid rgb(255 255 255 / .45); -webkit-backdrop-filter: blur(12px) saturate(170%); backdrop-filter: blur(12px) saturate(170%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / .45); text-shadow: 0 1px 4px rgb(0 0 0 / .35); }
+.hero-img .zoomtag { position: absolute; top: 10px; right: 10px; z-index: 1; }
+.hero-set { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 1; display: flex; flex-wrap: wrap; gap: 6px; }
+.hero-body { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 8px; }
+.hero-body ol, .lightbox ol { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; }
+
+.lightbox { position: fixed; inset: 0; z-index: 60; overflow-y: auto; overscroll-behavior: contain; color: #fff;
+  background: rgb(6 16 22 / .8); -webkit-backdrop-filter: blur(18px) saturate(160%); backdrop-filter: blur(18px) saturate(160%);
+  padding: calc(12px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px)); animation: lbIn .22s ease; }
+.lightbox .lb-in { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.lightbox .lb-close { align-self: flex-end; width: 48px; height: 48px; border-radius: 50%; font-size: 26px; line-height: 1; color: #fff;
+  background: rgb(255 255 255 / .16); border: 1px solid rgb(255 255 255 / .4); box-shadow: inset 0 1px 0 rgb(255 255 255 / .4); }
+.lightbox img { width: 100%; max-height: 70vh; object-fit: contain; border-radius: 16px; background: #000; }
+.lightbox h2 { font-size: 24px; }
+.lightbox .muted { color: rgb(255 255 255 / .72); }
+.lightbox .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+@keyframes lbIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* schema's */
+.progs { display: flex; flex-direction: column; gap: 12px; }
+.prog { min-height: 96px; }
+.prog b { font-family: var(--font-display); font-size: 21px; }
+.prog.on { border-color: var(--me); box-shadow: inset 0 1px 0 var(--glass-hi), 0 0 0 3px color-mix(in srgb, var(--me) 28%, transparent), 0 8px 20px -14px rgb(20 30 50 / .4); }
+.prog .thumbs { display: flex; gap: 4px; margin-top: 4px; }
+.prog .thumbs img { width: 34px; height: 34px; border-radius: 9px; object-fit: cover; }
+.tabs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 4px; }
+.tabs::-webkit-scrollbar { display: none; }
+.tabs .chip { flex: none; }
+.exrow { display: grid; grid-template-columns: 84px 1fr; gap: 12px; padding: 14px 0 12px; border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.exrow:first-of-type { border-top: 0; padding-top: 4px; }
+.exrow .ph { position: relative; width: 84px; height: 84px; border-radius: 16px; overflow: hidden; border: 1px solid var(--glass-edge); padding: 0; background: #0b1216; }
+.exrow .ph img { width: 100%; height: 100%; object-fit: cover; object-position: center 30%; display: block; }
+.exrow .ph span { position: absolute; right: 4px; bottom: 4px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 13px;
+  background: rgb(0 0 0 / .45); color: #fff; border: 1px solid rgb(255 255 255 / .5); }
+.exrow h4 { margin: 0; font-size: 17px; line-height: 1.2; }
+.exrow .role { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--me); }
+.exrow .set-info { font-size: 13px; color: var(--muted); margin: 2px 0 4px; }
+.setline { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 50px; font-variant-numeric: tabular-nums; }
+.setline b { font-family: var(--font-display); font-size: 19px; }
+.setline small { color: var(--muted); font-size: 13px; display: block; }
+.logbtn { flex: none; min-height: 44px; min-width: 84px; padding: 0 16px; border-radius: 999px; font-weight: 700; color: #fff; border: 1px solid rgb(255 255 255 / .55);
+  background: linear-gradient(170deg, rgb(255 255 255 / .38), rgb(255 255 255 / 0) 55%), color-mix(in srgb, var(--me) 86%, transparent);
+  box-shadow: inset 0 1.5px 0 rgb(255 255 255 / .6), 0 8px 16px -10px color-mix(in srgb, var(--me) 90%, transparent);
+  transition: transform .22s cubic-bezier(.2, .9, .3, 1.35); }
+.logbtn:active { transform: scale(.94); }
+.logbtn.done { background: var(--glass-field); color: var(--ok); border-color: color-mix(in srgb, var(--ok) 60%, transparent); box-shadow: inset 0 1px 0 var(--glass-hi); }
+.tm { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
+.tm b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.tm button { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--glass-edge); background: var(--glass-field); font-size: 20px; font-weight: 700; }
+.tm .reset { width: auto; padding: 0 12px; font-size: 13px; border-radius: 999px; }
+.wave { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+.wave th, .wave td { text-align: left; padding: 6px 4px; border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.wave th { font-size: 12px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; border-top: 0; }
+.wave tr.cur td { color: var(--me); font-weight: 700; }
+@media (min-width: 640px) {
+  .tile.wide { min-height: 250px; }
+  .tile.wide .art { width: 48%; }
+  .tile.wide .tt { font-size: 28px; }
+}
+@media (prefers-reduced-motion: reduce) { .t-programs .ill .fig, .lightbox { animation: none; } }
+/* Liquid glass figuren: filter #liquid staat onder de kop in de HTML */
+.tile .ill .fig { filter: url(#liquid); }
+.tile .art { filter: drop-shadow(0 10px 14px rgb(0 0 0 / .16)) drop-shadow(0 0 10px rgb(255 255 255 / .25)); }
+/* Bewegende figuren: elke tegel een eigen korte lus die bij de sport past */
+.tile .ill .fig, .tile .ill .fig g, .tile .ill .fig path, .tile .ill .fig rect, .tile .ill .fig line { transform-box: view-box; }
+.t-cardio .ill .fig { animation: run-bob .64s ease-in-out infinite; transform-origin: 100px 170px; }
+.t-cardio .fig > line { animation: speed .64s linear infinite; }
+.t-cardio .fig > line:nth-of-type(2n) { animation-delay: -.32s; }
+@keyframes run-bob { 0%, 50%, 100% { transform: translateY(0); } 25%, 75% { transform: translateY(-4px); } }
+@keyframes speed { 0% { transform: translateX(8px); opacity: .2; } 40% { opacity: 1; } 100% { transform: translateX(-10px); opacity: 0; } }
+.t-machine .a-cable { animation: cable 2.4s ease-in-out infinite; transform-origin: 110px 20px; }
+.t-machine .a-stack { animation: stack 2.4s ease-in-out infinite; }
+@keyframes cable { 0%, 15%, 100% { transform: scaleY(1); } 50%, 62% { transform: scaleY(2.7); } }
+@keyframes stack { 0%, 15%, 100% { transform: translateY(0); } 50%, 62% { transform: translateY(-26px); } }
+.t-free .a-press { animation: press 2.6s ease-in-out infinite; transform-origin: 100px 68px; }
+.t-free .a-upper { animation: dip 2.6s ease-in-out infinite; }
+.t-free .fig > line { animation: twinkle 2.6s ease-in-out infinite; }
+@keyframes press { 0%, 100% { transform: scaleY(1); } 30%, 45% { transform: scaleY(.72); } 60% { transform: scaleY(1); } }
+@keyframes dip { 0%, 30%, 60%, 100% { transform: translateY(0); } 45% { transform: translateY(10px); } }
+@keyframes twinkle { 0%, 60%, 100% { opacity: 1; } 30%, 45% { opacity: 0; } }
+.t-goals .ill .fig { animation: sway 3.6s ease-in-out infinite; transform-origin: 100px 172px; }
+.t-goals .a-arc { animation: arc 3.6s linear infinite; }
+@keyframes sway { 0%, 100% { transform: rotate(0); } 50% { transform: rotate(3deg); } }
+@keyframes arc { to { stroke-dashoffset: -54; } }
+.t-programs .fig > line { animation: power-lines 3.4s ease-in-out infinite; }
+@keyframes power-lines { 0%, 30%, 100% { opacity: 1; } 40%, 70% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .tile .ill .fig, .tile .ill .fig * { animation: none !important; } }
+
+
+@media (min-width: 640px) {
+  .tiles { gap: 16px; }
+  .tile { min-height: 340px; padding: 20px; }
+  .tile .art { top: 44px; height: 186px; }
+  .tile .tt { font-size: 26px; }
+  .list { grid-template-columns: repeat(3, 1fr); }
+}
+/* Telefoon: het hele beginscherm (vijf tegels) past op één scherm, ook als app op het beginscherm */
+@media (max-width: 639px) {
+  .hello h1 { font-size: 25px; }
+  .hello p { font-size: 13.5px; }
+  .tiles { --free: calc(100svh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 220px); }
+  .tiles .tile { min-height: clamp(180px, calc(var(--free) / 2.62), 272px); }
+  .tiles .tile.wide { min-height: clamp(120px, calc(var(--free) * .62 / 2.62), 200px); padding-block: 12px 14px; }
+  .tiles .tile .ts { display: none; }
+  .tiles .tile:not(.wide) .art { inset: 34px 0 62px; height: auto; }
+}
+@media (max-width: 440px) {
+  .brand small { display: none; }
+  .seg button { padding: 8px 10px; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } .tile .ripple { display: none; } }
+</style>
+
+<header class="top">
+  <div class="top-in">
+    <button class="brand" id="homeBtn" aria-label="Naar dashboard">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="13" r="7" fill="var(--sun)"/><path d="M2 24c4-3 7-3 10 0s6 3 10 0 7-3 10 0" fill="none" stroke="var(--lagoon)" stroke-width="3" stroke-linecap="round"/><path d="M2 30c4-3 7-3 10 0s6 3 10 0 7-3 10 0" fill="none" stroke="var(--lagoon)" stroke-width="3" stroke-linecap="round" opacity=".5"/></svg>
+      <span><b>Cabana</b><small>Fitness &amp; Racquet Club</small></span>
+    </button>
+    <div class="seg" role="group" aria-label="Profiel">
+      <button data-p="patrick" id="pPatrick">Patrick</button>
+      <button data-p="paula" id="pPaula">Paula</button>
+    </div>
+    <button class="iconbtn" id="dataBtn" aria-label="Data en export">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 17v3h16v-3"/></svg>
+    </button>
+  </div>
+</header>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+  <!-- Liquid glass voor de tegelfiguren: doorschijnend lichaam, glanslicht van linksboven en een heldere lichtrand -->
+  <filter id="liquid" x="-8%" y="-8%" width="116%" height="116%" color-interpolation-filters="sRGB">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="2.4" result="bump"/>
+    <feSpecularLighting in="bump" surfaceScale="5" specularConstant="1.15" specularExponent="26" lighting-color="#ffffff" result="spec"><feDistantLight azimuth="225" elevation="48"/></feSpecularLighting>
+    <feComposite in="spec" in2="SourceAlpha" operator="in" result="shine"/>
+    <feComponentTransfer in="SourceGraphic" result="body"><feFuncA type="linear" slope=".74"/></feComponentTransfer>
+    <feMorphology in="SourceAlpha" operator="erode" radius="1.1" result="inner"/>
+    <feComposite in="SourceAlpha" in2="inner" operator="out" result="edge"/>
+    <feFlood flood-color="#ffffff" flood-opacity=".7"/>
+    <feComposite in2="edge" operator="in" result="rim"/>
+    <feMerge><feMergeNode in="body"/><feMergeNode in="shine"/><feMergeNode in="rim"/></feMerge>
+  </filter>
+</defs></svg>
+<main id="app"></main>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+"use strict";
+
+/* ---------- Opslag ---------- */
+const KEY = "cabana.v1";
+const PROFILES = { patrick: "Patrick", paula: "Paula" };
+const MODULES = { cardio: "Cardio Cabana", machine: "Fitness Toestellen", free: "Vrije Gewichten", goals: "Lenigheid & Doelen" };
+
+const DEFAULT_CARDIO = ["Loopband", "Crosstrainer", "Hometrainer", "Roeier", "ClimbMill", "Ligfiets"];
+const DEFAULT_MACHINES = ["Leg Press", "Chest Press", "Lat Pulldown", "Seated Row", "Shoulder Press", "Leg Extension", "Leg Curl", "Abdominal Crunch"]; // oude lijst (v1), voor migratie
+
+/* Gewichtsstapels zoals op de Matrix-plaatjes (lbs-stapels met kg-label). */
+const lbsKg = (lb) => { const k = lb * 0.45359; return k < 5 ? Math.round(k * 10) / 10 : Math.round(k); };
+const STACKS = {
+  std:   { label: "Matrix standaard (4,5 · 11 · 18 · 25 kg …)", values: Array.from({ length: 20 }, (_, i) => lbsKg(10 + 15 * i)) },
+  big:   { label: "Matrix groot (tot 168 kg)", values: Array.from({ length: 25 }, (_, i) => lbsKg(10 + 15 * i)) },
+  small: { label: "Matrix klein (4,5 · 9 · 14 · 18 kg …)", values: Array.from({ length: 20 }, (_, i) => lbsKg(10 + 10 * i)) },
+  fine:  { label: "Vrij (stappen van 1,25 kg)", values: null }
+};
+/* Toestellen van Cabana, overgenomen van de instructieplaatjes (foto's van Norman, 27 sep 2026). */
+const CATALOG = [
+  { key: "legpress", name: "Leg Press", nl: "Beenpers", img: "IMG_0483", stack: "big", fields: ["Stoelslede (pull-pin)", "Voetpositie"],
+    tips: ["Zet met de pull-pin de stoelslede zo dat je knieën ongeveer 90° gebogen zijn.", "Voeten op schouderbreedte, handen aan de grepen naast de zitting.", "Duw tot bijna gestrekt zonder je knieën op slot te zetten."] },
+  { key: "legext", name: "Leg Extension", nl: "Beenstrekken", img: "IMG_0480", stack: "std", fields: ["Rugleuning", "Beenpad", "Startpositie (pull-pin)"],
+    tips: ["Rugleuning zo dat je knieën gelijk liggen met het draaipunt.", "Beenpad net boven je enkels.", "Kies je startpositie met de pull-pin; strek zonder te overstrekken."] },
+  { key: "legcurl", name: "Prone Leg Curl", nl: "Liggend beenbuigen", img: "IMG_0481", stack: "std", fields: ["Beenpad", "Onderarmpads"],
+    tips: ["Beenpad net achter je enkels, knieën gelijk met het draaipunt.", "Onderarmpads op een prettige hoogte, grepen vast.", "Buig je benen met heupen en rug stil, rustig terug."] },
+  { key: "adduction", name: "Hip Adduction", nl: "Binnenkant dijen", img: "IMG_0478", stack: "std", fields: ["Voetpositie", "Startpositie kniepads"],
+    tips: ["Kies een voetpositie waarbij je dijen horizontaal zijn.", "Zet de kniepads naar buiten op je startpositie, pak de grepen naast de zitting.", "Knieën rustig naar het midden en terug."] },
+  { key: "calfpress", name: "Calf Press", nl: "Kuitpers", img: "IMG_0482", stack: "big", fields: ["Stoelslede (pull-pin)"],
+    tips: ["Zet de stoelslede zo dat je knieën licht gebogen of gestrekt zijn.", "Pak de grepen naast de zitting.", "Duw je tenen zo ver mogelijk weg zonder je knieën te bewegen."] },
+  { key: "chestpress", name: "Converging Chest Press", nl: "Borstpers", img: "IMG_0477", stack: "std", fields: ["Zithoogte", "Handgreep"],
+    tips: ["Zithoogte zo dat de handgrepen op midden-borsthoogte zitten.", "Kies je handgreep.", "Duw uit tot bijna gestrekt, schouders blijven tegen de pad."] },
+  { key: "fly", name: "Rear Delt / Pec Fly", nl: "Achterkant schouder · borst-fly", img: "IMG_0475", stack: "std", fields: ["Zithoogte", "Armstand (pull-pin)"], exercises: ["Pec Fly", "Rear Delt"],
+    tips: ["Zithoogte zo dat de grepen op schouderhoogte zitten.", "Zet met de pull-pin boven elke arm de grepen voor rear delt of pec fly.", "Rear delt: gezicht naar de pad, grepen uit elkaar. Pec fly: rug tegen de pad, grepen naar elkaar."] },
+  { key: "lateral", name: "Lateral Raise", nl: "Zijwaarts heffen", img: "IMG_0476", stack: "small", fields: ["Zithoogte"],
+    tips: ["Rug recht, schouders tegen de pad.", "Onderarmen tegen de pads, grepen licht vasthouden.", "Ellebogen omhoog tot schouderhoogte en terug."] },
+  { key: "latpull", name: "Diverging Lat Pulldown", nl: "Latissimus-trek", img: "IMG_0473", stack: "std", fields: ["Hoogte dijpads", "Handgreep-positie"],
+    tips: ["Dijpads zo hoog dat je bovenbenen niet omhoog komen.", "Pak staand de grepen, ga zitten met je dijen onder de pads.", "Leun iets naar voren en trek de grepen naar je schouders."] },
+  { key: "row", name: "Diverging Seated Row", nl: "Roeien zittend", img: "IMG_0474", stack: "std", fields: ["Zithoogte", "Borstpad"],
+    tips: ["Zithoogte zo dat de bovenste grepen gelijk zijn met je schouders.", "Borstpad zo dat je beide grepen net kunt pakken.", "Verticale of parallelle grepen; trek naar je zij en terug."] },
+  { key: "armcurl", name: "Arm Curl", nl: "Bicepscurl", img: "IMG_0486", stack: "small", fields: ["Zithoogte", "Handgreep-positie"],
+    tips: ["Zithoogte zo dat de achterkant van je bovenarmen goed op de pad ligt.", "Kies je handgreep-positie.", "Buig je ellebogen, armen blijven op de pad, en terug."] },
+  { key: "backext", name: "Back Extension", nl: "Rugstrekken", img: "IMG_0485", stack: "std", fields: ["Voetsteun", "Rugpad hoogte", "Startpositie (pull-pin)"],
+    tips: ["Voetsteun zo dat je knieën licht gebogen zijn.", "Rugpad op hoogte van je schouderbladen.", "Rug recht houden en rustig achterover tot een prettig eindpunt."] },
+  { key: "abcrunch", name: "Abdominal Crunch", nl: "Buikcrunch", img: "IMG_0484", stack: "std", fields: ["Zithoogte"],
+    tips: ["Zithoogte zo dat je bovenrug tegen de bovenste rugpad rust.", "Grepen boven je schouders, rol je romp naar voren en terug."] },
+  { key: "cable", name: "Kabelstation", nl: "Matrix multi-station met oefenkaart", img: "IMG_0487", stack: "small", fields: ["Kabelhoogte", "Hulpstuk"],
+    exercises: ["Chest Press", "Chest Fly", "Incline Press", "Decline Press", "High Row", "Low Row", "Row / Rear Delt", "Deltoid Fly", "Front Raise", "Shoulder Press", "Triceps Pressdown", "Overhead Extension", "Ab Crunch", "Low Twist", "Rock Climb", "Hip Flexor", "Hip Abduction", "Hip Adduction"],
+    tips: ["Kies de oefening op de kaart en zet de kabel op de juiste hoogte.", "Hulpstukken: touw (triceps), losse handgrepen of gebogen stang."] }
+];
+const CUSTOM_FIELDS = ["Zithoogte", "Rugleuning", "Overige instelling"];
+const defOf = (it) => CATALOG.find(c => c.key === it.key) || { name: it.name, nl: "Eigen toestel", stack: "fine", fields: CUSTOM_FIELDS, tips: [] };
+const stackOf = (it) => it.stack || defOf(it).stack;
+const catalogMachines = () => CATALOG.map(c => ({ id: uid(), key: c.key, name: c.name, settings: {}, comment: "" }));
+const DEFAULT_FREE = ["Squat", "Deadlift", "Bench Press", "Overhead Press", "Dumbbell Row", "Biceps Curl"];
+const PULLUP_STEPS = {
+  A: { name: "Negatieven", desc: "Spring of stap omhoog en zak zo langzaam mogelijk (3-5 sec).", goal: "3 × 5" },
+  B: { name: "Met band", desc: "Pull-ups met weerstandsband of assisted machine.", goal: "3 × 8" },
+  C: { name: "Volledig", desc: "Echte pull-ups vanuit dead hang, kin boven de stang.", goal: "3 × 5" }
+};
+const STRETCHES = ["Hamstrings", "Heupflexoren", "Schouders", "Borst", "Kuiten", "Rug / cat-cow"];
+
+function blankProfile() {
+  const mk = (names) => names.map(n => ({ id: uid(), name: n, seat: "", back: "", extra: "", comment: "" }));
+  return { sessions: [], cardio: mk(DEFAULT_CARDIO), machines: catalogMachines(), free: mk(DEFAULT_FREE), pullupStep: "A", pullupDone: [], health: {} };
+}
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+let state;
+function load() {
+  let s = null;
+  try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+  if (!s || !s.data) s = { profile: "patrick", data: {} };
+  for (const p in PROFILES) if (!s.data[p]) s.data[p] = blankProfile();
+  if (!PROFILES[s.profile]) s.profile = "patrick";
+  return migrate(s);
+}
+/* v1 → v2: generieke toestellen vervangen door de echte Cabana-toestellen; eigen toestellen blijven. */
+function migrate(s) {
+  if (s.v >= 2) return s;
+  for (const p in s.data) {
+    const d = s.data[p];
+    const own = (d.machines || []).filter(m => !m.key && !DEFAULT_MACHINES.includes(m.name))
+      .map(m => ({ id: m.id, name: m.name, stack: "fine", comment: m.comment || "", settings: { "Zithoogte": m.seat || "", "Rugleuning": m.back || "", "Overige instelling": m.extra || "" } }));
+    d.machines = catalogMachines().concat(own);
+  }
+  s.v = 2;
+  return s;
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); return true; }
+  catch (e) { toast("Opslaan mislukt: geheugen vol? Exporteer en wis oude foto's."); return false; }
+}
+state = load();
+save();
+const P = () => state.data[state.profile];
+
+function addSession(s) {
+  const now = new Date();
+  const rec = Object.assign({ id: uid(), ts: now.toISOString(), profile: state.profile }, s);
+  P().sessions.push(rec);
+  save();
+  return rec;
+}
+function sessionsFor(module, exercise) {
+  return P().sessions.filter(s => s.module === module && (!exercise || s.exercise === exercise)).sort((a, b) => b.ts.localeCompare(a.ts));
+}
+
+/* ---------- Helpers ---------- */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = (v) => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const num = (v) => { if (v === "" || v == null) return ""; const n = parseFloat(String(v).replace(",", ".")); return isFinite(n) ? n : ""; };
+const kg = (n) => (n === "" || n == null) ? "" : (Math.round(n * 100) / 100).toString().replace(".", ",");
+function fmtDate(iso) {
+  const d = new Date(iso);
+  const today = new Date(); const y = new Date(); y.setDate(today.getDate() - 1);
+  const t = d.toLocaleTimeString("nl-NL", { hour: "2-digit", minute: "2-digit" });
+  if (d.toDateString() === today.toDateString()) return "Vandaag " + t;
+  if (d.toDateString() === y.toDateString()) return "Gisteren " + t;
+  return d.toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" }) + " " + t;
+}
+let toastT;
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove("show"), 2200);
+}
+function buzz() { try { navigator.vibrate && navigator.vibrate(15); } catch (e) {} }
+
+/* Tegel-illustraties: zelf getekende vectorfiguren met 3D-belichting (licht van linksboven, werken offline) */
+const ILL = {
+  cardio: "<svg class=\"ill\" viewBox=\"0 0 200 190\" aria-hidden=\"true\" focusable=\"false\"><defs>\n<radialGradient id=\"il1-skin\" cx=\".36\" cy=\".32\" r=\".75\"><stop offset=\"0\" stop-color=\"#ffd9bd\"/><stop offset=\".45\" stop-color=\"#e6a982\"/><stop offset=\"1\" stop-color=\"#9c5c40\"/></radialGradient>\n<linearGradient id=\"il1-hair\" x1=\"0\" y1=\"0\" x2=\".6\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a4a2c\"/><stop offset=\".5\" stop-color=\"#3a2217\"/><stop offset=\"1\" stop-color=\"#1e110b\"/></linearGradient>\n<radialGradient id=\"il1-shoe\" cx=\".35\" cy=\".3\" r=\".8\"><stop offset=\"0\" stop-color=\"#fff\"/><stop offset=\".6\" stop-color=\"#eef2f5\"/><stop offset=\"1\" stop-color=\"#a9b6c2\"/></radialGradient>\n<linearGradient id=\"il1-plate\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe7a3\"/><stop offset=\".5\" stop-color=\"#ffc94a\"/><stop offset=\"1\" stop-color=\"#c98a14\"/></linearGradient>\n<linearGradient id=\"il1-steel\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9aa6b2\"/><stop offset=\".45\" stop-color=\"#eef3f7\"/><stop offset=\"1\" stop-color=\"#4b5561\"/></linearGradient>\n<linearGradient id=\"il1-frame\" gradientUnits=\"userSpaceOnUse\" x1=\"60\" y1=\"0\" x2=\"190\" y2=\"40\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\".55\" stop-color=\"#e3ecf1\"/><stop offset=\"1\" stop-color=\"#9fb2bf\"/></linearGradient>\n<radialGradient id=\"il1-floor\" cx=\".5\" cy=\".5\" r=\".5\"><stop offset=\"0\" stop-color=\"rgb(0 0 0 / .38)\"/><stop offset=\".6\" stop-color=\"rgb(0 0 0 / .14)\"/><stop offset=\"1\" stop-color=\"rgb(0 0 0 / 0)\"/></radialGradient>\n</defs><ellipse cx=\"96\" cy=\"174\" rx=\"50\" ry=\"7\" fill=\"url(#il1-floor)\"/><g class=\"fig\"><line x1=\"20\" y1=\"70\" x2=\"54\" y2=\"70\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"3\" stroke-linecap=\"round\"/><line x1=\"8\" y1=\"92\" x2=\"52\" y2=\"92\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"4\" stroke-linecap=\"round\"/><line x1=\"26\" y1=\"116\" x2=\"56\" y2=\"116\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"3\" stroke-linecap=\"round\"/><line x1=\"14\" y1=\"138\" x2=\"52\" y2=\"138\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"3\" stroke-linecap=\"round\"/><g class=\"a-armrun\"><g><polyline points=\"112,64 93,82 109,96\" fill=\"none\" style=\"stroke:#7d4630\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"112,64 93,82 109,96;112,64 99,86 117,99;112,64 109,90 129,95;112,64 122,87 137,73;112,64 115,90 134,83;112,64 103,88 122,100;112,64 93,82 109,96\"/></polyline><polyline points=\"112,64 93,82 109,96\" fill=\"none\" style=\"stroke:#bf7c58\" stroke-width=\"6.48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.72 -0.81)\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"112,64 93,82 109,96;112,64 99,86 117,99;112,64 109,90 129,95;112,64 122,87 137,73;112,64 115,90 134,83;112,64 103,88 122,100;112,64 93,82 109,96\"/></polyline><polyline points=\"112,64 93,82 109,96\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.8 -1.98)\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"112,64 93,82 109,96;112,64 99,86 117,99;112,64 109,90 129,95;112,64 122,87 137,73;112,64 115,90 134,83;112,64 103,88 122,100;112,64 93,82 109,96\"/></polyline></g></g><g class=\"a-legrun\"><g><polyline points=\"100,110 117,139 123,170\" fill=\"none\" style=\"stroke:#081524\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"100,110 117,139 123,170;100,110 103,144 97,172;100,110 86,141 66,165;100,110 88,142 62,148;100,110 112,142 86,150;100,110 126,133 140,158;100,110 117,139 123,170\"/></polyline><polyline points=\"100,110 117,139 123,170\" fill=\"none\" style=\"stroke:#1c3a5a\" stroke-width=\"10.08\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.12 -1.26)\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"100,110 117,139 123,170;100,110 103,144 97,172;100,110 86,141 66,165;100,110 88,142 62,148;100,110 112,142 86,150;100,110 126,133 140,158;100,110 117,139 123,170\"/></polyline><polyline points=\"100,110 117,139 123,170\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.8 -3.08)\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"100,110 117,139 123,170;100,110 103,144 97,172;100,110 86,141 66,165;100,110 88,142 62,148;100,110 112,142 86,150;100,110 126,133 140,158;100,110 117,139 123,170\"/></polyline></g><ellipse cx=\"127\" cy=\"172\" rx=\"8\" ry=\"4.5\" fill=\"url(#il1-shoe)\"><animate attributeName=\"cx\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"127;101;70;66;90;144;127\"/><animate attributeName=\"cy\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"172;174;167;150;152;160;172\"/><animateTransform attributeName=\"transform\" type=\"rotate\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"-10 127 172;0 101 174;35 70 167;65 66 150;30 90 152;-5 144 160;-10 127 172\"/></ellipse></g><g><polyline points=\"116,62 101,108\" fill=\"none\" style=\"stroke:color-mix(in srgb, var(--top) 62%, #3a1a10)\" stroke-width=\"24\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"116,62 101,108\" fill=\"none\" style=\"stroke:var(--top)\" stroke-width=\"17.28\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.92 -2.16)\"/><polyline points=\"116,62 101,108\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"4.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-4.8 -5.28)\"/></g><g class=\"a-armrun\"><g><polyline points=\"118,66 128,89 143,75\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"118,66 128,89 143,75;118,66 121,92 140,85;118,66 109,90 128,102;118,66 99,84 115,98;118,66 105,88 123,101;118,66 115,92 135,97;118,66 128,89 143,75\"/></polyline><polyline points=\"118,66 128,89 143,75\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"6.48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.72 -0.81)\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"118,66 128,89 143,75;118,66 121,92 140,85;118,66 109,90 128,102;118,66 99,84 115,98;118,66 105,88 123,101;118,66 115,92 135,97;118,66 128,89 143,75\"/></polyline><polyline points=\"118,66 128,89 143,75\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.8 -1.98)\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"118,66 128,89 143,75;118,66 121,92 140,85;118,66 109,90 128,102;118,66 99,84 115,98;118,66 105,88 123,101;118,66 115,92 135,97;118,66 128,89 143,75\"/></polyline></g></g><g class=\"a-legrun\"><g><polyline points=\"102,110 90,142 64,148\" fill=\"none\" style=\"stroke:#0d1f33\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"102,110 90,142 64,148;102,110 114,142 88,150;102,110 128,133 142,158;102,110 119,139 125,170;102,110 105,144 99,172;102,110 88,141 68,165;102,110 90,142 64,148\"/></polyline><polyline points=\"102,110 90,142 64,148\" fill=\"none\" style=\"stroke:#2a5178\" stroke-width=\"10.08\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.12 -1.26)\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"102,110 90,142 64,148;102,110 114,142 88,150;102,110 128,133 142,158;102,110 119,139 125,170;102,110 105,144 99,172;102,110 88,141 68,165;102,110 90,142 64,148\"/></polyline><polyline points=\"102,110 90,142 64,148\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.8 -3.08)\"><animate attributeName=\"points\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"102,110 90,142 64,148;102,110 114,142 88,150;102,110 128,133 142,158;102,110 119,139 125,170;102,110 105,144 99,172;102,110 88,141 68,165;102,110 90,142 64,148\"/></polyline></g><ellipse cx=\"68\" cy=\"150\" rx=\"8\" ry=\"4.5\" fill=\"url(#il1-shoe)\"><animate attributeName=\"cx\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"68;92;146;129;103;72;68\"/><animate attributeName=\"cy\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"150;152;160;172;174;167;150\"/><animateTransform attributeName=\"transform\" type=\"rotate\" dur=\".64s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0.0000;0.1667;0.3333;0.5000;0.6667;0.8333;1.0000\" keySplines=\".4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1;.4 0 .6 1\" values=\"65 68 150;30 92 152;-5 146 160;-10 129 172;0 103 174;35 72 167;65 68 150\"/></ellipse></g><g><polyline points=\"119,55 117,62\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"119,55 117,62\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"5.04\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.56 -0.63)\"/><polyline points=\"119,55 117,62\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.4 -1.54)\"/></g><path d=\"M115 35 Q 97.5 25 84 38 Q 103.5 41 117 40 Z\" fill=\"#56331f\"/><circle cx=\"124\" cy=\"42\" r=\"12.5\" fill=\"url(#il1-skin)\"/><path d=\"M132 33 Q 124 26 113 35 Q 109 44 116 51 Q 119 42 125 39 Q 131 37 132 33Z\" fill=\"url(#il1-hair)\"/><circle cx=\"115\" cy=\"35\" r=\"2.6\" fill=\"var(--acc)\"/></g></svg>",
+  machine: "<svg class=\"ill\" viewBox=\"0 0 200 190\" aria-hidden=\"true\" focusable=\"false\"><defs>\n<radialGradient id=\"il2-skin\" cx=\".36\" cy=\".32\" r=\".75\"><stop offset=\"0\" stop-color=\"#ffd9bd\"/><stop offset=\".45\" stop-color=\"#e6a982\"/><stop offset=\"1\" stop-color=\"#9c5c40\"/></radialGradient>\n<linearGradient id=\"il2-hair\" x1=\"0\" y1=\"0\" x2=\".6\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a4a2c\"/><stop offset=\".5\" stop-color=\"#3a2217\"/><stop offset=\"1\" stop-color=\"#1e110b\"/></linearGradient>\n<radialGradient id=\"il2-shoe\" cx=\".35\" cy=\".3\" r=\".8\"><stop offset=\"0\" stop-color=\"#fff\"/><stop offset=\".6\" stop-color=\"#eef2f5\"/><stop offset=\"1\" stop-color=\"#a9b6c2\"/></radialGradient>\n<linearGradient id=\"il2-plate\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe7a3\"/><stop offset=\".5\" stop-color=\"#ffc94a\"/><stop offset=\"1\" stop-color=\"#c98a14\"/></linearGradient>\n<linearGradient id=\"il2-steel\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9aa6b2\"/><stop offset=\".45\" stop-color=\"#eef3f7\"/><stop offset=\"1\" stop-color=\"#4b5561\"/></linearGradient>\n<linearGradient id=\"il2-frame\" gradientUnits=\"userSpaceOnUse\" x1=\"60\" y1=\"0\" x2=\"190\" y2=\"40\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\".55\" stop-color=\"#e3ecf1\"/><stop offset=\"1\" stop-color=\"#9fb2bf\"/></linearGradient>\n<radialGradient id=\"il2-floor\" cx=\".5\" cy=\".5\" r=\".5\"><stop offset=\"0\" stop-color=\"rgb(0 0 0 / .38)\"/><stop offset=\".6\" stop-color=\"rgb(0 0 0 / .14)\"/><stop offset=\"1\" stop-color=\"rgb(0 0 0 / 0)\"/></radialGradient>\n</defs><ellipse cx=\"118\" cy=\"178\" rx=\"66\" ry=\"6\" fill=\"url(#il2-floor)\"/><g class=\"fig\"><g fill=\"none\" stroke=\"url(#il2-frame)\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\n     <path d=\"M158 176 V20 H100\" stroke-width=\"7\"/><path d=\"M60 176 H176\" stroke-width=\"7\"/>\n     <path d=\"M100 150 V176\" stroke-width=\"6\"/><path class=\"a-cable\" d=\"M110 20 V40\" stroke-width=\"2.5\" stroke=\"#e8eef2\"/>\n     <path d=\"M126 116 v12\" stroke-width=\"5\"/>\n   </g>\n   <circle cx=\"110\" cy=\"22\" r=\"6\" fill=\"rgb(255 255 255 / .95)\"/>\n   <g fill=\"url(#il2-steel)\"><rect x=\"164\" y=\"112\" width=\"22\" height=\"8\" rx=\"2\"/><rect x=\"164\" y=\"122\" width=\"22\" height=\"8\" rx=\"2\"/><rect x=\"164\" y=\"132\" width=\"22\" height=\"8\" rx=\"2\"/><rect x=\"164\" y=\"142\" width=\"22\" height=\"8\" rx=\"2\"/><rect x=\"164\" y=\"152\" width=\"22\" height=\"8\" rx=\"2\"/><rect x=\"164\" y=\"162\" width=\"22\" height=\"8\" rx=\"2\"/></g>\n   <g class=\"a-stack\"><rect x=\"164\" y=\"112\" width=\"22\" height=\"18\" rx=\"2\" fill=\"url(#il2-plate)\"/></g>\n   <rect x=\"72\" y=\"140\" width=\"52\" height=\"11\" rx=\"5.5\" fill=\"url(#il2-frame)\"/>\n   <rect x=\"118\" y=\"112\" width=\"22\" height=\"10\" rx=\"5\" fill=\"url(#il2-frame)\"/><g class=\"a-pull\"><g><polyline points=\"98,88 110,66 106,42\" fill=\"none\" style=\"stroke:#7d4630\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\"2.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.15;.5;.62;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"98,88 110,66 106,42;98,88 110,66 106,42;98,88 116,98 106,76;98,88 116,98 106,76;98,88 110,66 106,42\"/></polyline><polyline points=\"98,88 110,66 106,42\" fill=\"none\" style=\"stroke:#bf7c58\" stroke-width=\"6.48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.72 -0.81)\"><animate attributeName=\"points\" dur=\"2.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.15;.5;.62;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"98,88 110,66 106,42;98,88 110,66 106,42;98,88 116,98 106,76;98,88 116,98 106,76;98,88 110,66 106,42\"/></polyline><polyline points=\"98,88 110,66 106,42\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.8 -1.98)\"><animate attributeName=\"points\" dur=\"2.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.15;.5;.62;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"98,88 110,66 106,42;98,88 110,66 106,42;98,88 116,98 106,76;98,88 116,98 106,76;98,88 110,66 106,42\"/></polyline></g></g><g><polyline points=\"96,138 130,134 132,166\" fill=\"none\" style=\"stroke:#081524\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"96,138 130,134 132,166\" fill=\"none\" style=\"stroke:#1c3a5a\" stroke-width=\"10.08\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.12 -1.26)\"/><polyline points=\"96,138 130,134 132,166\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.8 -3.08)\"/></g><ellipse cx=\"137\" cy=\"169\" rx=\"8\" ry=\"4.5\" fill=\"url(#il2-shoe)\" transform=\"rotate(0 137 169)\"/><g><polyline points=\"98,84 96,136\" fill=\"none\" style=\"stroke:color-mix(in srgb, var(--top) 62%, #3a1a10)\" stroke-width=\"25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"98,84 96,136\" fill=\"none\" style=\"stroke:var(--top)\" stroke-width=\"18\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2 -2.25)\"/><polyline points=\"98,84 96,136\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-5 -5.5)\"/></g><g class=\"a-pull\"><g><polyline points=\"102,88 119,66 117,42\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\"2.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.15;.5;.62;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"102,88 119,66 117,42;102,88 119,66 117,42;102,88 124,97 117,76;102,88 124,97 117,76;102,88 119,66 117,42\"/></polyline><polyline points=\"102,88 119,66 117,42\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"6.48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.72 -0.81)\"><animate attributeName=\"points\" dur=\"2.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.15;.5;.62;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"102,88 119,66 117,42;102,88 119,66 117,42;102,88 124,97 117,76;102,88 124,97 117,76;102,88 119,66 117,42\"/></polyline><polyline points=\"102,88 119,66 117,42\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.8 -1.98)\"><animate attributeName=\"points\" dur=\"2.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.15;.5;.62;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"102,88 119,66 117,42;102,88 119,66 117,42;102,88 124,97 117,76;102,88 124,97 117,76;102,88 119,66 117,42\"/></polyline></g><path d=\"M80 40 H140\" stroke=\"#2b2f36\" stroke-width=\"6\" stroke-linecap=\"round\"><animateTransform attributeName=\"transform\" type=\"translate\" dur=\"2.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.15;.5;.62;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"0 0;0 0;0 34;0 34;0 0\"/></path><path d=\"M81 38.8 H139\" stroke=\"rgb(255 255 255 / .45)\" stroke-width=\"1.6\" stroke-linecap=\"round\"><animateTransform attributeName=\"transform\" type=\"translate\" dur=\"2.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.15;.5;.62;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"0 0;0 0;0 34;0 34;0 0\"/></path></g><g><polyline points=\"98,138 134,138 138,168\" fill=\"none\" style=\"stroke:#0d1f33\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"98,138 134,138 138,168\" fill=\"none\" style=\"stroke:#2a5178\" stroke-width=\"10.08\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.12 -1.26)\"/><polyline points=\"98,138 134,138 138,168\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.8 -3.08)\"/></g><ellipse cx=\"143\" cy=\"171\" rx=\"8\" ry=\"4.5\" fill=\"url(#il2-shoe)\" transform=\"rotate(0 143 171)\"/><g><polyline points=\"96,74 98,84\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"96,74 98,84\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"5.04\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.56 -0.63)\"/><polyline points=\"96,74 98,84\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.4 -1.54)\"/></g><path d=\"M84 55 Q 75 45 70 72 Q 81 61 86 60 Z\" fill=\"#56331f\"/><circle cx=\"93\" cy=\"62\" r=\"12.5\" fill=\"url(#il2-skin)\"/><path d=\"M101 53 Q 93 46 82 55 Q 78 64 85 71 Q 88 62 94 59 Q 100 57 101 53Z\" fill=\"url(#il2-hair)\"/><circle cx=\"84\" cy=\"55\" r=\"2.6\" fill=\"var(--acc)\"/></g></svg>",
+  free: "<svg class=\"ill\" viewBox=\"0 0 200 190\" aria-hidden=\"true\" focusable=\"false\"><defs>\n<radialGradient id=\"il3-skin\" cx=\".36\" cy=\".32\" r=\".75\"><stop offset=\"0\" stop-color=\"#ffd9bd\"/><stop offset=\".45\" stop-color=\"#e6a982\"/><stop offset=\"1\" stop-color=\"#9c5c40\"/></radialGradient>\n<linearGradient id=\"il3-hair\" x1=\"0\" y1=\"0\" x2=\".6\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a4a2c\"/><stop offset=\".5\" stop-color=\"#3a2217\"/><stop offset=\"1\" stop-color=\"#1e110b\"/></linearGradient>\n<radialGradient id=\"il3-shoe\" cx=\".35\" cy=\".3\" r=\".8\"><stop offset=\"0\" stop-color=\"#fff\"/><stop offset=\".6\" stop-color=\"#eef2f5\"/><stop offset=\"1\" stop-color=\"#a9b6c2\"/></radialGradient>\n<linearGradient id=\"il3-plate\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe7a3\"/><stop offset=\".5\" stop-color=\"#ffc94a\"/><stop offset=\"1\" stop-color=\"#c98a14\"/></linearGradient>\n<linearGradient id=\"il3-steel\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9aa6b2\"/><stop offset=\".45\" stop-color=\"#eef3f7\"/><stop offset=\"1\" stop-color=\"#4b5561\"/></linearGradient>\n<linearGradient id=\"il3-frame\" gradientUnits=\"userSpaceOnUse\" x1=\"60\" y1=\"0\" x2=\"190\" y2=\"40\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\".55\" stop-color=\"#e3ecf1\"/><stop offset=\"1\" stop-color=\"#9fb2bf\"/></linearGradient>\n<radialGradient id=\"il3-floor\" cx=\".5\" cy=\".5\" r=\".5\"><stop offset=\"0\" stop-color=\"rgb(0 0 0 / .38)\"/><stop offset=\".6\" stop-color=\"rgb(0 0 0 / .14)\"/><stop offset=\"1\" stop-color=\"rgb(0 0 0 / 0)\"/></radialGradient>\n</defs><ellipse cx=\"100\" cy=\"179\" rx=\"52\" ry=\"7\" fill=\"url(#il3-floor)\"/><g class=\"fig\"><g><polyline points=\"92,114 78,144 70,172\" fill=\"none\" style=\"stroke:#0d1f33\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\"2.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.3;.45;.6;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"92,114 78,144 70,172;92,114 78,144 70,172;92,124 74,148 70,172;92,114 78,144 70,172;92,114 78,144 70,172\"/></polyline><polyline points=\"92,114 78,144 70,172\" fill=\"none\" style=\"stroke:#2a5178\" stroke-width=\"10.08\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.12 -1.26)\"><animate attributeName=\"points\" dur=\"2.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.3;.45;.6;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"92,114 78,144 70,172;92,114 78,144 70,172;92,124 74,148 70,172;92,114 78,144 70,172;92,114 78,144 70,172\"/></polyline><polyline points=\"92,114 78,144 70,172\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.8 -3.08)\"><animate attributeName=\"points\" dur=\"2.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.3;.45;.6;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"92,114 78,144 70,172;92,114 78,144 70,172;92,124 74,148 70,172;92,114 78,144 70,172;92,114 78,144 70,172\"/></polyline></g><ellipse cx=\"66\" cy=\"175\" rx=\"8\" ry=\"4.5\" fill=\"url(#il3-shoe)\" transform=\"rotate(-8 66 175)\"/><g><polyline points=\"108,114 122,144 130,172\" fill=\"none\" style=\"stroke:#0d1f33\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\"2.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.3;.45;.6;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"108,114 122,144 130,172;108,114 122,144 130,172;108,124 126,148 130,172;108,114 122,144 130,172;108,114 122,144 130,172\"/></polyline><polyline points=\"108,114 122,144 130,172\" fill=\"none\" style=\"stroke:#2a5178\" stroke-width=\"10.08\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.12 -1.26)\"><animate attributeName=\"points\" dur=\"2.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.3;.45;.6;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"108,114 122,144 130,172;108,114 122,144 130,172;108,124 126,148 130,172;108,114 122,144 130,172;108,114 122,144 130,172\"/></polyline><polyline points=\"108,114 122,144 130,172\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.8 -3.08)\"><animate attributeName=\"points\" dur=\"2.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.3;.45;.6;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"108,114 122,144 130,172;108,114 122,144 130,172;108,124 126,148 130,172;108,114 122,144 130,172;108,114 122,144 130,172\"/></polyline></g><ellipse cx=\"134\" cy=\"175\" rx=\"8\" ry=\"4.5\" fill=\"url(#il3-shoe)\" transform=\"rotate(8 134 175)\"/><g class=\"a-upper\"><g><polyline points=\"88,112 112,112\" fill=\"none\" style=\"stroke:#0d1f33\" stroke-width=\"16\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"88,112 112,112\" fill=\"none\" style=\"stroke:#2a5178\" stroke-width=\"11.52\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.28 -1.44)\"/><polyline points=\"88,112 112,112\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"3.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-3.2 -3.52)\"/></g><linearGradient id=\"il3-top\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\".4\"><stop offset=\"0\" style=\"stop-color:color-mix(in srgb, var(--top) 55%, #fff)\"/><stop offset=\".45\" style=\"stop-color:var(--top)\"/><stop offset=\"1\" style=\"stop-color:color-mix(in srgb, var(--top) 60%, #3a1a10)\"/></linearGradient><path d=\"M82 66 Q100 60 118 66 L112 114 H88 Z\" fill=\"url(#il3-top)\" stroke=\"url(#il3-top)\" stroke-width=\"6\" stroke-linejoin=\"round\"/><g class=\"a-press\"><g><polyline points=\"84,68 58,58 62,28\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"84,68 58,58 62,28\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"6.48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.72 -0.81)\"/><polyline points=\"84,68 58,58 62,28\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.8 -1.98)\"/></g><g><polyline points=\"116,68 142,58 138,28\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"116,68 142,58 138,28\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"6.48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.72 -0.81)\"/><polyline points=\"116,68 142,58 138,28\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.8 -1.98)\"/></g><g><rect x=\"45\" y=\"21.5\" width=\"34\" height=\"5\" rx=\"2.5\" fill=\"url(#il3-steel)\"/><rect x=\"43\" y=\"15\" width=\"8\" height=\"18\" rx=\"3\" fill=\"url(#il3-plate)\"/><rect x=\"73\" y=\"15\" width=\"8\" height=\"18\" rx=\"3\" fill=\"url(#il3-plate)\"/><rect x=\"44\" y=\"16.5\" width=\"2\" height=\"12\" rx=\"1\" fill=\"rgb(255 255 255 / .6)\"/><rect x=\"74\" y=\"16.5\" width=\"2\" height=\"12\" rx=\"1\" fill=\"rgb(255 255 255 / .6)\"/></g><g><rect x=\"121\" y=\"21.5\" width=\"34\" height=\"5\" rx=\"2.5\" fill=\"url(#il3-steel)\"/><rect x=\"119\" y=\"15\" width=\"8\" height=\"18\" rx=\"3\" fill=\"url(#il3-plate)\"/><rect x=\"149\" y=\"15\" width=\"8\" height=\"18\" rx=\"3\" fill=\"url(#il3-plate)\"/><rect x=\"120\" y=\"16.5\" width=\"2\" height=\"12\" rx=\"1\" fill=\"rgb(255 255 255 / .6)\"/><rect x=\"150\" y=\"16.5\" width=\"2\" height=\"12\" rx=\"1\" fill=\"rgb(255 255 255 / .6)\"/></g></g><g><polyline points=\"100,52 100,62\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"100,52 100,62\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"5.76\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.64 -0.72)\"/><polyline points=\"100,52 100,62\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.6 -1.76)\"/></g><path d=\"M104 32 Q126 30 122 58 Q116 44 106 42Z\" fill=\"#56331f\"/><circle cx=\"100\" cy=\"42\" r=\"12.5\" fill=\"url(#il3-skin)\"/><path d=\"M87 43 Q 87 27 100 28 Q 113 27 113 43 Q 106 34 100 34 Q 94 34 87 43Z\" fill=\"#3a2217\"/></g><line x1=\"40\" y1=\"12\" x2=\"52\" y2=\"12\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"150\" y1=\"10\" x2=\"164\" y2=\"10\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"44\" y1=\"40\" x2=\"52\" y2=\"40\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"158\" y1=\"40\" x2=\"166\" y2=\"40\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/></g></svg>",
+  goals: "<svg class=\"ill\" viewBox=\"0 0 200 190\" aria-hidden=\"true\" focusable=\"false\"><defs>\n<radialGradient id=\"il4-skin\" cx=\".36\" cy=\".32\" r=\".75\"><stop offset=\"0\" stop-color=\"#ffd9bd\"/><stop offset=\".45\" stop-color=\"#e6a982\"/><stop offset=\"1\" stop-color=\"#9c5c40\"/></radialGradient>\n<linearGradient id=\"il4-hair\" x1=\"0\" y1=\"0\" x2=\".6\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a4a2c\"/><stop offset=\".5\" stop-color=\"#3a2217\"/><stop offset=\"1\" stop-color=\"#1e110b\"/></linearGradient>\n<radialGradient id=\"il4-shoe\" cx=\".35\" cy=\".3\" r=\".8\"><stop offset=\"0\" stop-color=\"#fff\"/><stop offset=\".6\" stop-color=\"#eef2f5\"/><stop offset=\"1\" stop-color=\"#a9b6c2\"/></radialGradient>\n<linearGradient id=\"il4-plate\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe7a3\"/><stop offset=\".5\" stop-color=\"#ffc94a\"/><stop offset=\"1\" stop-color=\"#c98a14\"/></linearGradient>\n<linearGradient id=\"il4-steel\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9aa6b2\"/><stop offset=\".45\" stop-color=\"#eef3f7\"/><stop offset=\"1\" stop-color=\"#4b5561\"/></linearGradient>\n<linearGradient id=\"il4-frame\" gradientUnits=\"userSpaceOnUse\" x1=\"60\" y1=\"0\" x2=\"190\" y2=\"40\"><stop offset=\"0\" stop-color=\"#ffffff\"/><stop offset=\".55\" stop-color=\"#e3ecf1\"/><stop offset=\"1\" stop-color=\"#9fb2bf\"/></linearGradient>\n<radialGradient id=\"il4-floor\" cx=\".5\" cy=\".5\" r=\".5\"><stop offset=\"0\" stop-color=\"rgb(0 0 0 / .38)\"/><stop offset=\".6\" stop-color=\"rgb(0 0 0 / .14)\"/><stop offset=\"1\" stop-color=\"rgb(0 0 0 / 0)\"/></radialGradient>\n</defs><ellipse cx=\"100\" cy=\"176\" rx=\"36\" ry=\"6\" fill=\"url(#il4-floor)\"/><g class=\"fig\"><path d=\"M28 62 Q 80 4 140 64\" fill=\"none\" stroke=\"rgb(255 255 255 / .6)\" stroke-width=\"3\" stroke-linecap=\"round\" class=\"a-arc\" stroke-dasharray=\"1 8\"/><g><polyline points=\"80,86 110,96 138,88\" fill=\"none\" style=\"stroke:#7d4630\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"80,86 110,96 138,88\" fill=\"none\" style=\"stroke:#bf7c58\" stroke-width=\"6.48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.72 -0.81)\"/><polyline points=\"80,86 110,96 138,88\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.8 -1.98)\"/></g><g class=\"a-kick\"><g><polyline points=\"102,112 134,118 140,80\" fill=\"none\" style=\"stroke:#081524\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\"3.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.5;1\" keySplines=\".45 0 .55 1;.45 0 .55 1\" values=\"102,112 134,118 140,80;102,112 136,103 170,95;102,112 134,118 140,80\"/></polyline><polyline points=\"102,112 134,118 140,80\" fill=\"none\" style=\"stroke:#1c3a5a\" stroke-width=\"10.08\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.12 -1.26)\"><animate attributeName=\"points\" dur=\"3.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.5;1\" keySplines=\".45 0 .55 1;.45 0 .55 1\" values=\"102,112 134,118 140,80;102,112 136,103 170,95;102,112 134,118 140,80\"/></polyline><polyline points=\"102,112 134,118 140,80\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.8 -3.08)\"><animate attributeName=\"points\" dur=\"3.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.5;1\" keySplines=\".45 0 .55 1;.45 0 .55 1\" values=\"102,112 134,118 140,80;102,112 136,103 170,95;102,112 134,118 140,80\"/></polyline></g><ellipse cx=\"140\" cy=\"74\" rx=\"8\" ry=\"4.5\" fill=\"url(#il4-shoe)\" transform=\"rotate(-80 140 74)\"><animate attributeName=\"cx\" dur=\"3.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.5;1\" keySplines=\".45 0 .55 1;.45 0 .55 1\" values=\"140;176;140\"/><animate attributeName=\"cy\" dur=\"3.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.5;1\" keySplines=\".45 0 .55 1;.45 0 .55 1\" values=\"74;94;74\"/><animateTransform attributeName=\"transform\" type=\"rotate\" dur=\"3.6s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.5;1\" keySplines=\".45 0 .55 1;.45 0 .55 1\" values=\"-80 140 74;-12 176 94;-80 140 74\"/></ellipse></g><g><polyline points=\"102,112 100,142 100,170\" fill=\"none\" style=\"stroke:#0d1f33\" stroke-width=\"14\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"102,112 100,142 100,170\" fill=\"none\" style=\"stroke:#2a5178\" stroke-width=\"10.08\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.12 -1.26)\"/><polyline points=\"102,112 100,142 100,170\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.8 -3.08)\"/></g><ellipse cx=\"94\" cy=\"173\" rx=\"8\" ry=\"4.5\" fill=\"url(#il4-shoe)\" transform=\"rotate(0 94 173)\"/><g><polyline points=\"76,82 102,112\" fill=\"none\" style=\"stroke:color-mix(in srgb, var(--top) 62%, #3a1a10)\" stroke-width=\"23\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"76,82 102,112\" fill=\"none\" style=\"stroke:var(--top)\" stroke-width=\"16.56\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.84 -2.07)\"/><polyline points=\"76,82 102,112\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"4.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-4.6 -5.06)\"/></g><g><polyline points=\"76,84 52,85 28,80\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"76,84 52,85 28,80\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"6.48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.72 -0.81)\"/><polyline points=\"76,84 52,85 28,80\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.8 -1.98)\"/></g><g><polyline points=\"72,78 66,70\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"72,78 66,70\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"5.04\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.56 -0.63)\"/><polyline points=\"72,78 66,70\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.4 -1.54)\"/></g><path d=\"M69 53 Q 79.5 43 86 80 Q 73.5 59 67 58 Z\" fill=\"#56331f\"/><circle cx=\"60\" cy=\"60\" r=\"12.5\" fill=\"url(#il4-skin)\"/><path d=\"M52 51 Q 60 44 71 53 Q 75 62 68 69 Q 65 60 59 57 Q 53 55 52 51Z\" fill=\"url(#il4-hair)\"/><circle cx=\"69\" cy=\"53\" r=\"2.6\" fill=\"var(--acc)\"/></g></svg>",
+  programs: "<svg class=\"ill\" viewBox=\"0 0 200 190\" aria-hidden=\"true\" focusable=\"false\"><defs>\n<radialGradient id=\"il5-skin\" cx=\".36\" cy=\".32\" r=\".75\"><stop offset=\"0\" stop-color=\"#ffd9bd\"/><stop offset=\".45\" stop-color=\"#e6a982\"/><stop offset=\"1\" stop-color=\"#9c5c40\"/></radialGradient>\n<linearGradient id=\"il5-hair\" x1=\"0\" y1=\"0\" x2=\".6\" y2=\"1\"><stop offset=\"0\" stop-color=\"#7a4a2c\"/><stop offset=\".5\" stop-color=\"#3a2217\"/><stop offset=\"1\" stop-color=\"#1e110b\"/></linearGradient>\n<radialGradient id=\"il5-shoe\" cx=\".35\" cy=\".3\" r=\".8\"><stop offset=\"0\" stop-color=\"#fff\"/><stop offset=\".6\" stop-color=\"#eef2f5\"/><stop offset=\"1\" stop-color=\"#a9b6c2\"/></radialGradient>\n<linearGradient id=\"il5-plate\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ffe7a3\"/><stop offset=\".5\" stop-color=\"#ffc94a\"/><stop offset=\"1\" stop-color=\"#c98a14\"/></linearGradient>\n<linearGradient id=\"il5-plate2\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\"1\"><stop offset=\"0\" stop-color=\"#5d6b7a\"/><stop offset=\".45\" stop-color=\"#2b3440\"/><stop offset=\"1\" stop-color=\"#11161c\"/></linearGradient>\n<linearGradient id=\"il5-steel\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9aa6b2\"/><stop offset=\".45\" stop-color=\"#eef3f7\"/><stop offset=\"1\" stop-color=\"#4b5561\"/></linearGradient>\n<radialGradient id=\"il5-floor\" cx=\".5\" cy=\".5\" r=\".5\"><stop offset=\"0\" stop-color=\"rgb(0 0 0 / .38)\"/><stop offset=\".6\" stop-color=\"rgb(0 0 0 / .14)\"/><stop offset=\"1\" stop-color=\"rgb(0 0 0 / 0)\"/></radialGradient>\n<linearGradient id=\"il5-top\" x1=\"0\" y1=\"0\" x2=\"1\" y2=\".4\"><stop offset=\"0\" style=\"stop-color:color-mix(in srgb, var(--top) 55%, #fff)\"/><stop offset=\".45\" style=\"stop-color:var(--top)\"/><stop offset=\"1\" style=\"stop-color:color-mix(in srgb, var(--top) 60%, #3a1a10)\"/></linearGradient>\n</defs><ellipse cx=\"100\" cy=\"179\" rx=\"70\" ry=\"7\" fill=\"url(#il5-floor)\"/><g class=\"fig\"><g><polyline points=\"93,112 84,144 80,171\" fill=\"none\" style=\"stroke:#0d1f33\" stroke-width=\"15\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\"3.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.35;.47;.8;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"93,112 84,144 80,171;93,136 74,150 80,171;93,136 74,150 80,171;93,112 84,144 80,171;93,112 84,144 80,171\"/></polyline><polyline points=\"93,112 84,144 80,171\" fill=\"none\" style=\"stroke:#2a5178\" stroke-width=\"10.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.2 -1.35)\"><animate attributeName=\"points\" dur=\"3.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.35;.47;.8;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"93,112 84,144 80,171;93,136 74,150 80,171;93,136 74,150 80,171;93,112 84,144 80,171;93,112 84,144 80,171\"/></polyline><polyline points=\"93,112 84,144 80,171\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-3 -3.3)\"><animate attributeName=\"points\" dur=\"3.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.35;.47;.8;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"93,112 84,144 80,171;93,136 74,150 80,171;93,136 74,150 80,171;93,112 84,144 80,171;93,112 84,144 80,171\"/></polyline></g><ellipse cx=\"76\" cy=\"174\" rx=\"9\" ry=\"4.8\" fill=\"url(#il5-shoe)\" transform=\"rotate(-8 76 174)\"/><g><polyline points=\"107,112 116,144 120,171\" fill=\"none\" style=\"stroke:#0d1f33\" stroke-width=\"15\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><animate attributeName=\"points\" dur=\"3.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.35;.47;.8;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"107,112 116,144 120,171;107,136 126,150 120,171;107,136 126,150 120,171;107,112 116,144 120,171;107,112 116,144 120,171\"/></polyline><polyline points=\"107,112 116,144 120,171\" fill=\"none\" style=\"stroke:#2a5178\" stroke-width=\"10.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.2 -1.35)\"><animate attributeName=\"points\" dur=\"3.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.35;.47;.8;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"107,112 116,144 120,171;107,136 126,150 120,171;107,136 126,150 120,171;107,112 116,144 120,171;107,112 116,144 120,171\"/></polyline><polyline points=\"107,112 116,144 120,171\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-3 -3.3)\"><animate attributeName=\"points\" dur=\"3.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.35;.47;.8;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"107,112 116,144 120,171;107,136 126,150 120,171;107,136 126,150 120,171;107,112 116,144 120,171;107,112 116,144 120,171\"/></polyline></g><ellipse cx=\"124\" cy=\"174\" rx=\"9\" ry=\"4.8\" fill=\"url(#il5-shoe)\" transform=\"rotate(8 124 174)\"/><g class=\"a-squat\"><animateTransform attributeName=\"transform\" type=\"translate\" dur=\"3.4s\" repeatCount=\"indefinite\" calcMode=\"spline\" keyTimes=\"0;.35;.47;.8;1\" keySplines=\".45 0 .55 1;.45 0 .55 1;.45 0 .55 1;.45 0 .55 1\" values=\"0 0;0 24;0 24;0 0;0 0\"/><g><polyline points=\"88,112 112,112\" fill=\"none\" style=\"stroke:#0d1f33\" stroke-width=\"17\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"88,112 112,112\" fill=\"none\" style=\"stroke:#2a5178\" stroke-width=\"12.24\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.36 -1.53)\"/><polyline points=\"88,112 112,112\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"3.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-3.4 -3.74)\"/></g><path d=\"M78 64 Q100 57 122 64 L113 114 H87 Z\" fill=\"url(#il5-top)\" stroke=\"url(#il5-top)\" stroke-width=\"6\" stroke-linejoin=\"round\"/><path d=\"M92 96 Q100 99 108 96\" fill=\"none\" stroke=\"rgb(255 255 255 / .35)\" stroke-width=\"1.6\" stroke-linecap=\"round\"/><g><polyline points=\"100,51 100,61\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"9\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"100,51 100,61\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"6.48\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.72 -0.81)\"/><polyline points=\"100,51 100,61\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-1.8 -1.98)\"/></g><path d=\"M108 30 Q134 26 132 50 Q128 64 122 70 Q124 52 112 40Z\" fill=\"url(#il5-hair)\"/><circle cx=\"100\" cy=\"41\" r=\"12.5\" fill=\"url(#il5-skin)\"/><path d=\"M87 42 Q 87 26 100 27 Q 113 26 113 42 Q 106 33 100 33 Q 94 33 87 42Z\" fill=\"#3a2217\"/><circle cx=\"111\" cy=\"31\" r=\"2.8\" fill=\"var(--acc)\"/><g><rect x=\"24\" y=\"92\" width=\"11\" height=\"56\" rx=\"3\" fill=\"url(#il5-plate2)\"/><rect x=\"25.5\" y=\"95\" width=\"2\" height=\"42\" rx=\"1\" fill=\"rgb(255 255 255 / .5)\"/><rect x=\"36\" y=\"100\" width=\"8\" height=\"40\" rx=\"3\" fill=\"url(#il5-plate)\"/><rect x=\"37.5\" y=\"103\" width=\"2\" height=\"26\" rx=\"1\" fill=\"rgb(255 255 255 / .5)\"/><rect x=\"165\" y=\"92\" width=\"11\" height=\"56\" rx=\"3\" fill=\"url(#il5-plate2)\"/><rect x=\"166.5\" y=\"95\" width=\"2\" height=\"42\" rx=\"1\" fill=\"rgb(255 255 255 / .5)\"/><rect x=\"156\" y=\"100\" width=\"8\" height=\"40\" rx=\"3\" fill=\"url(#il5-plate)\"/><rect x=\"157.5\" y=\"103\" width=\"2\" height=\"26\" rx=\"1\" fill=\"rgb(255 255 255 / .5)\"/><rect x=\"18\" y=\"117.5\" width=\"164\" height=\"5\" rx=\"2.5\" fill=\"url(#il5-steel)\"/><rect x=\"45\" y=\"114\" width=\"4\" height=\"12\" rx=\"1.5\" fill=\"url(#il5-steel)\"/><rect x=\"151\" y=\"114\" width=\"4\" height=\"12\" rx=\"1.5\" fill=\"url(#il5-steel)\"/><g><polyline points=\"81,68 76,94 79,119\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"10.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"81,68 76,94 79,119\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"7.56\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.84 -0.94)\"/><polyline points=\"81,68 76,94 79,119\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.1 -2.31)\"/></g><g><polyline points=\"119,68 124,94 121,119\" fill=\"none\" style=\"stroke:#a9674a\" stroke-width=\"10.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><polyline points=\"119,68 124,94 121,119\" fill=\"none\" style=\"stroke:#e6a982\" stroke-width=\"7.56\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-0.84 -0.94)\"/><polyline points=\"119,68 124,94 121,119\" fill=\"none\" style=\"stroke:rgb(255 255 255 / .36)\" stroke-width=\"2.1\" stroke-linecap=\"round\" stroke-linejoin=\"round\" transform=\"translate(-2.1 -2.31)\"/></g><circle cx=\"79\" cy=\"120\" r=\"5.2\" fill=\"url(#il5-skin)\"/><circle cx=\"121\" cy=\"120\" r=\"5.2\" fill=\"url(#il5-skin)\"/></g></g><line x1=\"22\" y1=\"80\" x2=\"30\" y2=\"72\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"32\" y1=\"76\" x2=\"34\" y2=\"66\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"178\" y1=\"80\" x2=\"170\" y2=\"72\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"168\" y1=\"76\" x2=\"166\" y2=\"66\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"48\" y1=\"40\" x2=\"58\" y2=\"40\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/><line x1=\"142\" y1=\"40\" x2=\"152\" y2=\"40\" stroke=\"rgb(255 255 255 / .75)\" stroke-width=\"2.5\" stroke-linecap=\"round\"/></g></svg>"
+};
+
+const backBtn = (to, label, arg) => `<button class="back" data-go="${to}"${arg ? ` data-arg="${esc(JSON.stringify(arg))}"` : ""}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>${esc(label)}</button>`;
+
+/* ---------- Router ---------- */
+let route = { view: "home" };
+let cleanup = [];
+function go(view, params = {}) {
+  cleanup.forEach(f => f()); cleanup = [];
+  route = Object.assign({ view }, params);
+  render();
+  window.scrollTo(0, 0);
+}
+function render() {
+  document.body.className = "p-" + state.profile + (state.bg === "sunset" ? "" : " bg-photo");
+  $("#pPatrick").setAttribute("aria-pressed", state.profile === "patrick");
+  $("#pPaula").setAttribute("aria-pressed", state.profile === "paula");
+  const v = VIEWS[route.view] || VIEWS.home;
+  $("#app").innerHTML = v();
+  (AFTER[route.view] || (() => {}))();
+}
+
+/* ---------- Draaiknop (wheel picker) ---------- */
+function range(from, to, step) { const a = []; for (let v = from; v <= to + 1e-9; v += step) a.push(Math.round(v * 100) / 100); return a; }
+const SETS = range(1, 8, 1), REPS = range(1, 40, 1), WEIGHTS = range(0, 250, 1.25);
+function wheelHTML(id, label, values, cur, fmt = String, jump = 1) {
+  const idx = nearestIdx(values, cur);
+  return `<div class="wheelbox"><span>${label}</span>
+    <div class="wheel"><div class="wheel-list" id="${id}" data-idx="${idx}" tabindex="0" role="spinbutton" aria-label="${label}" aria-valuenow="${values[idx]}">
+      ${values.map((v, i) => `<div class="${i === idx ? "on" : ""}">${fmt(v)}</div>`).join("")}
+    </div></div>
+    <div class="step"><button type="button" data-w="${id}" data-d="${-jump}" aria-label="${label} omlaag">−</button><button type="button" data-w="${id}" data-d="${jump}" aria-label="${label} omhoog">+</button></div>
+  </div>`;
+}
+function nearestIdx(values, v) { let b = 0; values.forEach((x, i) => { if (Math.abs(x - v) < Math.abs(values[b] - v)) b = i; }); return b; }
+const ITEM = 48;
+function initWheel(id, values, onChange) {
+  const el = document.getElementById(id); if (!el) return null;
+  let idx = +el.dataset.idx, t;
+  const mark = (i) => { [...el.children].forEach((c, k) => c.classList.toggle("on", k === i)); el.setAttribute("aria-valuenow", values[i]); };
+  const set = (i, smooth) => {
+    i = Math.max(0, Math.min(values.length - 1, i));
+    if (i !== idx) buzz();
+    idx = i; mark(i); onChange(values[i]);
+    el.scrollTo({ top: i * ITEM, behavior: smooth ? "smooth" : "auto" });
+  };
+  // Beginstand zetten zonder snap, pas daarna scroll-events verwerken.
+  let ready = false;
+  el.style.scrollSnapType = "none"; el.scrollTop = idx * ITEM;
+  setTimeout(() => { el.scrollTop = idx * ITEM; el.style.scrollSnapType = ""; setTimeout(() => { ready = true; }, 50); }, 60);
+  el.addEventListener("scroll", () => {
+    if (!ready) return;
+    const i = Math.round(el.scrollTop / ITEM);
+    if (i !== idx && i >= 0 && i < values.length) { idx = i; mark(i); onChange(values[i]); }
+    clearTimeout(t); t = setTimeout(() => { if (Math.abs(el.scrollTop - idx * ITEM) > 2) el.scrollTo({ top: idx * ITEM, behavior: "smooth" }); }, 120);
+  }, { passive: true });
+  el.addEventListener("keydown", (e) => { if (e.key === "ArrowUp") { e.preventDefault(); set(idx - 1, true); } if (e.key === "ArrowDown") { e.preventDefault(); set(idx + 1, true); } });
+  [...el.children].forEach((c, k) => c.addEventListener("click", () => set(k, true)));
+  $$(`[data-w="${id}"]`).forEach(b => b.addEventListener("click", () => set(idx + (+b.dataset.d), true)));
+  return { set: (v) => set(nearestIdx(values, v), true) };
+}
+
+/* ---------- Views ---------- */
+const VIEWS = {}, AFTER = {};
+
+/* Na de training: één tik om de krachttraining van vandaag naar Apple Gezondheid te sturen. */
+function healthCard() {
+  const dr = healthDraft(localDay(new Date())); if (!dr) return "";
+  const st = dayStats(dr.list);
+  return `<section class="card">
+    <p class="eyebrow">Apple Gezondheid</p>
+    <p class="small" style="margin:0">Vandaag ${st.n} ${st.n === 1 ? "oefening" : "oefeningen"}${st.volume ? `, ${kg(st.volume)} kg volume` : ""}, ongeveer ${dr.min} min.</p>
+    ${dr.sent ? `<p class="sent">Naar Gezondheid gestuurd ${esc(fmtDate(dr.sent))}</p><button class="btn ghost" data-go="health">Bekijken</button>`
+      : `<div class="row"><button class="btn primary" id="homeHealth">Stuur naar Gezondheid</button><button class="btn ghost" data-go="health">Aanpassen</button></div>`}
+  </section>`;
+}
+AFTER.home = () => {
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) $$("svg.ill").forEach(x => x.pauseAnimations && x.pauseAnimations());
+  const b = $("#homeHealth"); if (b) b.onclick = () => { buzz(); sendToHealth(healthDraft(localDay(new Date()))); setTimeout(() => go("home"), 600); };
+};
+function progTile() {
+  const ps = progState(), pr = PROGRAMS.find(p => p.id === ps.id);
+  const sub = pr ? `${pr.name}${pr.wave ? " · week " + ((ps.week || 0) + 1) : ""} · tik om verder te gaan` : "BBB, circuit en push-pull-benen op de Matrix-toestellen";
+  return `<button class="tile wide t-programs" data-go="${pr ? "program" : "programs"}"${pr ? ` data-arg='${JSON.stringify({ pid: pr.id })}'` : ""}>
+      <span class="num">${pr ? "Jouw schema: " + esc(pr.short) : PROGRAMS.length + " schema's"}</span>
+      <span class="art">${ILL.programs}</span>
+      <span class="tt">Trainings&shy;programma's</span><span class="ts">${esc(sub)}</span></button>`;
+}
+VIEWS.home = () => {
+  const s = P().sessions;
+  const cnt = (m) => s.filter(x => x.module === m).length;
+  const last = [...s].sort((a, b) => b.ts.localeCompare(a.ts)).slice(0, 4);
+  const week = s.filter(x => Date.now() - new Date(x.ts) < 7 * 864e5).length;
+  const hour = new Date().getHours();
+  const greet = hour < 12 ? "Goedemorgen" : hour < 18 ? "Goedemiddag" : "Goedenavond";
+  const tile = (m, title, sub) => `<button class="tile t-${m}" data-go="${m}">
+      <span class="num">${cnt(m)} ${cnt(m) === 1 ? "sessie" : "sessies"}</span>
+      <span class="art">${ILL[m]}</span>
+      <span class="tt">${title}</span><span class="ts">${sub}</span></button>`;
+  return `
+  <div class="hello"><div><h1>${greet}, <span>${PROFILES[state.profile]}</span></h1><p>${week ? `${week} ${week === 1 ? "oefening" : "oefeningen"} gelogd deze week` : "Nog niets gelogd deze week. Kies een tegel om te beginnen."}</p></div></div>
+  <section class="tiles" aria-label="Hoofdmenu">
+    ${tile("cardio", "Cardio Cabana", "Matrix-toestellen + Apple Watch")}
+    ${tile("machine", "Fitness Toestellen", "Kracht met jouw instellingen")}
+    ${tile("free", "Vrije Gewichten", "Normale kracht · dumbbells & barbell")}
+    ${tile("goals", "Lenigheid & Doelen", "Spierrek · dead hang · pull-ups")}
+    ${progTile()}
+  </section>
+  ${healthCard()}
+  <section class="card">
+    <p class="eyebrow">Laatst gelogd</p>
+    ${last.length ? `<div class="hist">${last.map(histRow).join("")}</div>` : `<p class="empty">Je eerste sessie verschijnt hier. Alles wordt op deze iPhone bewaard en is te exporteren via de knop rechtsboven.</p>`}
+  </section>`;
+};
+
+function describe(s) {
+  if (s.module === "cardio") return [s.duration_min && s.duration_min + " min", s.distance_km && kg(s.distance_km) + " km", s.kcal && s.kcal + " kcal", s.hr_avg && "♥ " + s.hr_avg].filter(Boolean).join(" · ") || "Foto opgeslagen";
+  if (s.exercise === "Dead Hang") return s.seconds + " sec";
+  if (s.module === "goals" && s.kind === "stretch") return s.seconds + " sec";
+  return `${s.sets} × ${s.reps}${s.weight_kg !== "" && s.weight_kg != null ? " @ " + kg(s.weight_kg) + " kg" : ""}`;
+}
+function histRow(s) {
+  return `<div><span class="l"><b>${esc(s.exercise)}</b><span>${fmtDate(s.ts)} · ${esc(describe(s))}${s.notes ? " · " + esc(s.notes) : ""}</span></span><button class="x" data-del="${s.id}" aria-label="Verwijder">×</button></div>`;
+}
+
+/* Lijst per module */
+function listView(module, key, title, sub) {
+  const items = P()[key];
+  return `${backBtn("home", "Dashboard")}
+  <div class="head"><h1>${title}</h1><p>${sub}</p></div>
+  <section class="list">
+    ${items.map(it => {
+      const last = module === "machine" ? machineSessions(it)[0] : sessionsFor(module, it.name)[0];
+      const d = module === "machine" ? defOf(it) : null;
+      const img = d && d.img ? `<img class="thumb" src="img/${d.img}.jpg" alt="" loading="lazy">` : "";
+      return `<button class="item${img ? " has-img" : ""}" data-open="${it.id}">${img}<b>${esc(it.name)}</b>${d ? `<span class="nl">${esc(d.nl)}</span>` : ""}<span>${last ? esc(describe(last)) : "Nog geen sessie"}</span></button>`;
+    }).join("")}
+    <button class="item add" id="addItem">+ Toestel toevoegen</button>
+  </section>
+  <section class="card" id="addBox" hidden>
+    <label class="f">Naam<input class="i" id="newName" placeholder="Bijv. Hip Abduction" autocomplete="off"></label>
+    <div class="row"><button class="btn ghost" id="addCancel">Annuleer</button><button class="btn primary" id="addOk">Toevoegen</button></div>
+  </section>`;
+}
+function listAfter(key, view) {
+  $("#addItem").onclick = () => { $("#addBox").hidden = false; $("#newName").focus(); };
+  $("#addCancel").onclick = () => { $("#addBox").hidden = true; };
+  $("#addOk").onclick = () => {
+    const n = $("#newName").value.trim(); if (!n) return toast("Vul een naam in");
+    P()[key].push(key === "machines" ? { id: uid(), name: n, stack: "fine", settings: {}, comment: "" } : { id: uid(), name: n, seat: "", back: "", extra: "", comment: "" }); save(); go(route.view);
+  };
+  $$("[data-open]").forEach(b => b.onclick = () => go(view, { id: b.dataset.open }));
+}
+VIEWS.cardio = () => listView("cardio", "cardio", "Cardio Cabana", "Kies het Matrix-toestel. Maak een foto van het eindscherm en vul je Apple Watch-data aan.");
+AFTER.cardio = () => listAfter("cardio", "cardioLog");
+VIEWS.machine = () => listView("machine", "machines", "Fitness Toestellen", "Je instellingen en laatste gewicht staan per toestel klaar.");
+AFTER.machine = () => listAfter("machines", "strength");
+VIEWS.free = () => listView("free", "free", "Vrije Gewichten", "Barbell- en dumbbell-oefeningen.");
+AFTER.free = () => { listAfter("free", "strength"); $("#addItem").textContent = "+ Oefening toevoegen"; };
+
+/* ---------- Cardio loggen ---------- */
+let pendingPhoto = null;
+VIEWS.cardioLog = () => {
+  const it = P().cardio.find(x => x.id === route.id); if (!it) return VIEWS.cardio();
+  const hist = sessionsFor("cardio", it.name).slice(0, 5);
+  return `${backBtn("cardio", "Cardio Cabana")}
+  <div class="head"><h1>${esc(it.name)}</h1><p>Matrix-scherm + Apple Watch</p></div>
+  <section class="card">
+    <div class="row" style="align-items:center"><h3 style="flex:1 1 auto">Foto van het scherm</h3><span class="badge" style="flex:none">OCR in fase 2</span></div>
+    <div class="photo" id="photoBox">
+      <input type="file" accept="image/*" capture="environment" id="photoIn" aria-label="Foto maken of kiezen">
+      <div id="photoPrev"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><p class="muted small" style="margin:6px 0 0">Tik om een foto te maken of te kiezen</p></div>
+    </div>
+    <p class="muted small" style="margin:0">De foto wordt bewaard bij de sessie. In fase 2 leest de app de waarden automatisch uit; voor nu vul je ze hieronder in.</p>
+  </section>
+  <section class="card">
+    <h3>Matrix-scherm</h3>
+    <div class="row">
+      <label class="f">Duur (min)<input class="i" id="c_dur" inputmode="decimal" placeholder="30"></label>
+      <label class="f">Afstand (km)<input class="i" id="c_dist" inputmode="decimal" placeholder="4,2"></label>
+    </div>
+    <div class="row">
+      <label class="f">Kcal (toestel)<input class="i" id="c_kcal" inputmode="numeric" placeholder="280"></label>
+      <label class="f">Niveau / snelheid<input class="i" id="c_lvl" inputmode="decimal" placeholder="8"></label>
+    </div>
+  </section>
+  <section class="card">
+    <fieldset><legend><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="6" y="5" width="12" height="14" rx="4"/><path d="M9 5V2h6v3M9 19v3h6v-3"/></svg>Apple Watch</legend>
+      <div class="row">
+        <label class="f">Actieve kcal<input class="i" id="w_kcal" inputmode="numeric" placeholder="245"></label>
+        <label class="f">Totaal kcal<input class="i" id="w_tot" inputmode="numeric" placeholder="310"></label>
+      </div>
+      <div class="row">
+        <label class="f">Gem. hartslag<input class="i" id="w_hr" inputmode="numeric" placeholder="132"></label>
+        <label class="f">Max. hartslag<input class="i" id="w_hrmax" inputmode="numeric" placeholder="158"></label>
+      </div>
+    </fieldset>
+    <label class="f">Notitie<input class="i" id="c_notes" placeholder="Bijv. interval 1 min hard / 1 min rustig"></label>
+    <button class="btn primary big" id="cSave">Sessie opslaan</button>
+  </section>
+  <section class="card"><p class="eyebrow">Eerdere sessies</p>
+    ${hist.length ? `<div class="hist">${hist.map(histRow).join("")}</div>` : `<p class="empty">Nog geen sessies op dit toestel.</p>`}
+  </section>`;
+};
+AFTER.cardioLog = () => {
+  const it = P().cardio.find(x => x.id === route.id); if (!it) return;
+  pendingPhoto = null;
+  $("#photoIn").onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    try { pendingPhoto = await shrink(f, 900, 0.62); $("#photoPrev").innerHTML = `<img src="${pendingPhoto}" alt="Foto van het Matrix-scherm">`; }
+    catch (err) { toast("Kon de foto niet lezen"); }
+  };
+  $("#cSave").onclick = () => {
+    const v = (id) => num($(id).value);
+    const rec = { module: "cardio", exercise: it.name, duration_min: v("#c_dur"), distance_km: v("#c_dist"), kcal: v("#c_kcal"), level: v("#c_lvl"),
+      watch_active_kcal: v("#w_kcal"), watch_total_kcal: v("#w_tot"), hr_avg: v("#w_hr"), hr_max: v("#w_hrmax"), notes: $("#c_notes").value.trim(),
+      photo: pendingPhoto || "", source: pendingPhoto ? "foto+handmatig" : "handmatig" };
+    if (!rec.duration_min && !rec.distance_km && !rec.kcal && !rec.photo) return toast("Vul minstens duur, afstand of kcal in, of maak een foto");
+    addSession(rec); toast("Cardio opgeslagen"); go("cardioLog", { id: it.id });
+  };
+};
+function shrink(file, max, q) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onerror = rej;
+    r.onload = () => { const img = new Image(); img.onerror = rej; img.onload = () => {
+      const s = Math.min(1, max / Math.max(img.width, img.height));
+      const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height); res(c.toDataURL("image/jpeg", q));
+    }; img.src = r.result; };
+    r.readAsDataURL(file);
+  });
+}
+
+/* ---------- Kracht loggen (toestellen + vrije gewichten) ---------- */
+let cur = {};
+let subPick = {};
+function strengthItem() {
+  for (const [key, module] of [["machines", "machine"], ["free", "free"]]) {
+    const it = P()[key].find(x => x.id === route.id); if (it) return { it, module };
+  }
+  return {};
+}
+function machineSessions(it, sub) {
+  return P().sessions.filter(s => s.module === "machine" && (s.machine === it.name || s.exercise === it.name) && (!sub || s.sub === sub))
+    .sort((a, b) => b.ts.localeCompare(a.ts));
+}
+function suggest(last, values) {
+  if (!last) return { sets: 3, reps: 10, weight: values ? values[1] : 20, note: "" };
+  const w = last.weight_kg || 0;
+  const s = { sets: last.sets, reps: last.reps, weight: w, note: "" };
+  // Dubbele progressie: haal je de bovenkant van het rep-bereik (15), dan zwaarder en terug naar 8.
+  if (last.reps >= 15) {
+    s.reps = 8;
+    if (values) { const i = nearestIdx(values, w); s.weight = values[Math.min(i + 1, values.length - 1)]; s.note = `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>één plaatje zwaarder (${kg(s.weight)} kg)</b> en terug naar 8 herhalingen.`; }
+    else { s.weight = w + 2.5; s.note = `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>+2,5 kg</b> en terug naar 8 herhalingen.`; }
+  } else s.note = `Vorige keer <b>${last.sets} × ${last.reps} @ ${kg(w)} kg</b>. Zelfde gewicht, probeer meer herhalingen.`;
+  return s;
+}
+VIEWS.strength = () => {
+  const { it, module } = strengthItem(); if (!it) return VIEWS.home();
+  const isMachine = module === "machine";
+  const d = isMachine ? defOf(it) : null;
+  const subs = d && d.exercises;
+  const sub = subs ? (subPick[it.id] && subs.includes(subPick[it.id]) ? subPick[it.id] : subs[0]) : "";
+  const hist = isMachine ? machineSessions(it, sub) : sessionsFor(module, it.name);
+  const values = isMachine ? STACKS[stackOf(it)].values : null;
+  let sg = suggest(hist[0], values);
+  if (route.preset) {
+    const pz = route.preset, w = pz.weight != null ? pz.weight : sg.weight;
+    sg = { sets: pz.sets, reps: pz.reps, weight: w, note: `Uit je schema <b>${esc(route.prog.label)}</b>: ${pz.sets} × ${pz.reps} @ ${kg(w)} kg.${pz.weight == null ? " Eerste keer: controleer het gewicht." : ""}` };
+  }
+  cur = { sets: sg.sets, reps: sg.reps, weight: sg.weight };
+  const set = it.settings || {};
+  return `${route.back ? backBtn(route.back.view, "Terug naar schema", route.back) : backBtn(module, MODULES[module])}
+  <div class="head"><h1>${esc(it.name)}</h1><p>${isMachine ? esc(d.nl) : "Vrije gewichten"}</p></div>
+  ${isMachine && d.img ? `<section class="card hero">
+    <button class="hero-img" data-zoom="${d.key}" aria-label="Instructiebord ${esc(it.name)} groot bekijken"><img src="img/${d.img}.jpg" alt="Instructiebord ${esc(it.name)}">
+      <span class="glasspill zoomtag" aria-hidden="true">⤢ Groot</span>
+      <span class="hero-set">${setPills(it) || `<span class="glasspill">Vul hieronder je instellingen in</span>`}</span></button>
+    <div class="hero-body"><p class="eyebrow">Zo stel je hem in</p><ol>${d.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ol></div>
+  </section>` : ""}
+  ${isMachine ? `<section class="card">
+    <p class="eyebrow">Mijn instellingen</p>
+    <div class="settings-grid">
+      ${d.fields.map((f, i) => `<label class="f${d.fields.length % 2 && i === d.fields.length - 1 ? " wide" : ""}">${esc(f)}<input class="i" id="s_f${i}" data-field="${esc(f)}" value="${esc(set[f] || "")}" placeholder="bijv. ${i === 0 ? "5" : "3"}"></label>`).join("")}
+      <label class="f wide">Commentaar<textarea class="i" id="s_comment" placeholder="bijv. rug goed tegen de pad, niet op slot">${esc(it.comment)}</textarea></label>
+      <label class="f wide">Gewichtsstapel<select class="i" id="s_stack">${Object.entries(STACKS).map(([k, v]) => `<option value="${k}"${k === stackOf(it) ? " selected" : ""}>${v.label}</option>`).join("")}</select></label>
+    </div>
+  </section>` : ""}
+  <section class="card">
+    <p class="eyebrow">Vandaag</p>
+    ${subs ? `<label class="f">Oefening<select class="i" id="subSel">${subs.map(x => `<option${x === sub ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>` : ""}
+    ${sg.note ? `<p class="hint" style="margin:0">${sg.note}</p>` : `<p class="hint" style="margin:0">Eerste keer: kies je startgewicht met de draaiknop.</p>`}
+    <div class="chips" role="group" aria-label="Snelkeuze">
+      ${[[3, 8], [3, 10], [3, 12], [3, 15]].map(([s, r]) => `<button class="chip" data-preset="${s}x${r}">${s}×${r}</button>`).join("")}
+    </div>
+    <div class="wheels">
+      ${wheelHTML("wSets", "Sets", SETS, cur.sets)}
+      ${wheelHTML("wReps", "Herh.", REPS, cur.reps)}
+      ${wheelHTML("wKg", "Kg", values || WEIGHTS, cur.weight, kg, values ? 1 : 2)}
+    </div>
+    <div class="summary" id="sum"></div>
+    <label class="f">Notitie<input class="i" id="st_notes" placeholder="bijv. laatste set zwaar"></label>
+    <button class="btn primary big" id="stSave">Opslaan</button>
+  </section>
+  <section class="card"><p class="eyebrow">Geschiedenis${sub ? " · " + esc(sub) : ""}</p>
+    ${hist.length ? `<div class="hist">${hist.slice(0, 8).map(histRow).join("")}</div>` : `<p class="empty">Nog geen sessies. Na je eerste keer staat de draaiknop hier automatisch op je laatste gewicht.</p>`}
+  </section>`;
+};
+AFTER.strength = () => {
+  const { it, module } = strengthItem(); if (!it) return;
+  const isMachine = module === "machine";
+  const values = isMachine ? STACKS[stackOf(it)].values : null;
+  const upd = () => {
+    $("#sum").innerHTML = `${cur.sets} × ${cur.reps} @ ${kg(cur.weight)} kg<small>volume ${kg(Math.round(cur.sets * cur.reps * cur.weight))} kg</small>`;
+    $$("[data-preset]").forEach(b => b.setAttribute("aria-pressed", b.dataset.preset === `${cur.sets}x${cur.reps}`));
+  };
+  const ws = initWheel("wSets", SETS, v => { cur.sets = v; upd(); });
+  const wr = initWheel("wReps", REPS, v => { cur.reps = v; upd(); });
+  initWheel("wKg", values || WEIGHTS, v => { cur.weight = v; upd(); });
+  upd();
+  $$("[data-preset]").forEach(b => b.onclick = () => { const [s, r] = b.dataset.preset.split("x").map(Number); ws.set(s); wr.set(r); cur.sets = s; cur.reps = r; upd(); });
+  let sub = "";
+  if (isMachine) {
+    it.settings = it.settings || {};
+    $$("[data-field]").forEach(inp => inp.addEventListener("change", () => { it.settings[inp.dataset.field] = inp.value.trim(); save(); toast("Instelling bewaard"); }));
+    $("#s_comment").addEventListener("change", () => { it.comment = $("#s_comment").value.trim(); save(); toast("Commentaar bewaard"); });
+    $("#s_stack").onchange = (e) => { it.stack = e.target.value; save(); go("strength", route); };
+    const ss = $("#subSel");
+    if (ss) { sub = ss.value; ss.onchange = () => { subPick[it.id] = ss.value; go("strength", { id: it.id, back: route.back }); }; }
+  }
+  $("#stSave").onclick = () => {
+    const extra = isMachine ? { machine: it.name, sub, settings: Object.entries(it.settings).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("; ") } : {};
+    const pg = route.prog ? { prog: route.prog.tag, notes: [route.prog.label, $("#st_notes").value.trim()].filter(Boolean).join(" · "), source: "schema" } : {};
+    addSession(Object.assign({ module, exercise: sub ? `${it.name} · ${sub}` : it.name, sets: cur.sets, reps: cur.reps, weight_kg: cur.weight, notes: $("#st_notes").value.trim(), source: "handmatig" }, extra, pg));
+    toast(`${sub || it.name} opgeslagen`);
+    if (route.back) { const b = route.back; go(b.view, b); } else go("strength", { id: it.id });
+  };
+};
+
+/* ---------- Lenigheid & speciale doelen ---------- */
+VIEWS.goals = () => {
+  const hangs = sessionsFor("goals", "Dead Hang");
+  const best = hangs.reduce((m, s) => Math.max(m, s.seconds || 0), 0);
+  const st = P().pullupStep;
+  const stretches = P().sessions.filter(s => s.kind === "stretch").length;
+  return `${backBtn("home", "Dashboard")}
+  <div class="head"><h1>Lenigheid & Doelen</h1><p>Speciale doelen en je stretchroutine.</p></div>
+  <section class="list" style="grid-template-columns:1fr">
+    <button class="item" data-go="hang" style="min-height:96px"><b style="font-size:20px">Dead Hang</b><span>${best ? `Record ${best} sec · laatst ${hangs[0].seconds} sec` : "Seconden-timer · nog geen record"}</span></button>
+    <button class="item" data-go="pullup" style="min-height:96px"><b style="font-size:20px">Pull-up opbouw</b><span>Nu op stap ${st}: ${PULLUP_STEPS[st].name} (doel ${PULLUP_STEPS[st].goal})</span></button>
+    <button class="item" data-go="stretch" style="min-height:96px"><b style="font-size:20px">Lenigheid</b><span>${stretches ? `${stretches} stretches gelogd` : "Stretch-timer per spiergroep"}</span></button>
+  </section>`;
+};
+
+/* Seconden-timer, gedeeld door Dead Hang en Stretch */
+function timerView(title, backTo, backLabel, hist, extraTop = "") {
+  const secs = hist.map(s => s.seconds || 0);
+  const best = secs.length ? Math.max(...secs) : 0;
+  const avg = secs.length ? Math.round(secs.slice(0, 5).reduce((a, b) => a + b, 0) / Math.min(5, secs.length)) : 0;
+  return `${backBtn(backTo, backLabel)}
+  <div class="head"><h1>${title}</h1></div>
+  ${extraTop}
+  <section class="card">
+    <div class="timer" id="tDisp">0<small> sec</small></div>
+    <button class="btn primary big" id="tBtn" style="min-height:96px;font-size:26px">Start</button>
+    <div class="row" id="tAfter" hidden><button class="btn ghost" id="tDrop">Weggooien</button><button class="btn primary" id="tSave">Opslaan</button></div>
+    <div class="stats"><div><b>${best || "–"}</b><span>record (sec)</span></div><div><b>${secs[0] ?? "–"}</b><span>laatste</span></div><div><b>${avg || "–"}</b><span>gem. laatste 5</span></div></div>
+  </section>
+  <section class="card"><p class="eyebrow">Geschiedenis</p>
+    ${hist.length ? `<div class="hist">${hist.slice(0, 8).map(histRow).join("")}</div>` : `<p class="empty">Nog niets gelogd.</p>`}
+  </section>`;
+}
+/* Korte piep via Web Audio (iPhone laat websites niet trillen); werkt na een tik, ook met het scherm neergelegd */
+let audioCtx = null;
+function beep(freq = 880, ms = 120) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain(), t = audioCtx.currentTime;
+    o.frequency.value = freq; o.connect(g); g.connect(audioCtx.destination);
+    g.gain.setValueAtTime(.001, t); g.gain.exponentialRampToValueAtTime(.4, t + .01); g.gain.exponentialRampToValueAtTime(.001, t + ms / 1000);
+    o.start(t); o.stop(t + ms / 1000 + .02);
+  } catch (e) {}
+}
+/* lead = seconden aftellen voordat de stopwatch start (Dead Hang: telefoon neerleggen en grip pakken) */
+function timerAfter(onSave, lead = 0) {
+  let start = 0, raf = 0, secs = 0, lock = null, cd = 0, cdTimer = 0;
+  const disp = $("#tDisp"), btn = $("#tBtn");
+  const tick = () => { secs = Math.floor((performance.now() - start) / 1000); disp.innerHTML = `${secs}<small> sec</small>`; raf = requestAnimationFrame(tick); };
+  const stopCd = () => { clearInterval(cdTimer); cdTimer = 0; disp.classList.remove("cd"); };
+  const stop = () => { stopCd(); cancelAnimationFrame(raf); raf = 0; disp.classList.remove("run"); try { lock && lock.release(); } catch (e) {} lock = null; };
+  const run = () => { stopCd(); start = performance.now(); secs = 0; disp.classList.add("run"); btn.textContent = "Stop"; beep(1320, 280); buzz(); tick(); };
+  const showCd = () => { disp.innerHTML = `${cd}<small> klaar…</small>`; };
+  btn.onclick = async () => {
+    if (cdTimer) { stop(); disp.innerHTML = "0<small> sec</small>"; btn.textContent = "Start"; return; }
+    if (!raf) {
+      $("#tAfter").hidden = true;
+      try { lock = await navigator.wakeLock?.request("screen"); } catch (e) {}
+      if (!lead) return run();
+      cd = lead; disp.classList.add("cd"); btn.textContent = "Annuleer"; showCd(); beep();
+      cdTimer = setInterval(() => { cd--; if (cd <= 0) run(); else { showCd(); beep(); } }, 1000);
+    } else { stop(); buzz(); beep(660, 200); btn.textContent = "Opnieuw"; $("#tAfter").hidden = false; }
+  };
+  $("#tDrop").onclick = () => { $("#tAfter").hidden = true; secs = 0; disp.innerHTML = "0<small> sec</small>"; btn.textContent = "Start"; };
+  $("#tSave").onclick = () => { if (!secs) return toast("0 seconden, niets opgeslagen"); onSave(secs); };
+  cleanup.push(stop);
+}
+VIEWS.hang = () => timerView("Dead Hang", "goals", "Lenigheid & Doelen", sessionsFor("goals", "Dead Hang"),
+  `<p class="hint" style="margin:0">Tik Start, leg de telefoon neer en pak de stang: na 5 tellen (met piepjes) loopt de stopwatch. Tik Stop wanneer je loslaat.</p>`);
+AFTER.hang = () => timerAfter((secs) => { addSession({ module: "goals", kind: "hang", exercise: "Dead Hang", seconds: secs, source: "timer" }); toast(`Dead Hang: ${secs} sec opgeslagen`); go("hang"); }, 5);
+
+let stretchPick = STRETCHES[0];
+VIEWS.stretch = () => timerView("Lenigheid", "goals", "Lenigheid & Doelen",
+  P().sessions.filter(s => s.kind === "stretch" && s.exercise === stretchPick).sort((a, b) => b.ts.localeCompare(a.ts)),
+  `<section class="card"><p class="eyebrow">Spiergroep</p><div class="chips">${STRETCHES.map(s => `<button class="chip" data-stretch="${esc(s)}" aria-pressed="${s === stretchPick}">${esc(s)}</button>`).join("")}</div></section>`);
+AFTER.stretch = () => {
+  $$("[data-stretch]").forEach(b => b.onclick = () => { stretchPick = b.dataset.stretch; go("stretch"); });
+  timerAfter((secs) => { addSession({ module: "goals", kind: "stretch", exercise: stretchPick, seconds: secs, source: "timer" }); toast(`${stretchPick}: ${secs} sec opgeslagen`); go("stretch"); });
+};
+
+VIEWS.pullup = () => {
+  const p = P(), st = p.pullupStep, info = PULLUP_STEPS[st];
+  const hist = P().sessions.filter(s => s.kind === "pullup").sort((a, b) => b.ts.localeCompare(a.ts));
+  const lastSame = hist.find(s => s.step === st);
+  cur = { sets: lastSame?.sets || 3, reps: lastSame?.reps || 5 };
+  return `${backBtn("goals", "Lenigheid & Doelen")}
+  <div class="head"><h1>Pull-up opbouw</h1><p>Drie stappen naar je eerste echte pull-ups.</p></div>
+  <section class="card">
+    <div class="steps">${Object.entries(PULLUP_STEPS).map(([k, v]) => `<button class="stepc ${p.pullupDone.includes(k) ? "done" : ""}" data-step="${k}" aria-pressed="${k === st}"><b>${k}</b><span>${v.name}</span></button>`).join("")}</div>
+    <p class="hint" style="margin:0"><b>Stap ${st} · ${info.name}.</b> ${info.desc} Doel: <b>${info.goal}</b>.</p>
+  </section>
+  <section class="card">
+    <p class="eyebrow">Log stap ${st}</p>
+    <div class="wheels" style="grid-template-columns:1fr 1fr">
+      ${wheelHTML("pSets", "Sets", SETS, cur.sets)}
+      ${wheelHTML("pReps", "Herh.", REPS, cur.reps)}
+    </div>
+    <label class="f">Notitie<input class="i" id="pu_notes" placeholder="bijv. groene band, 4 sec zakken"></label>
+    <button class="btn primary big" id="puSave">Opslaan</button>
+    ${p.pullupDone.includes(st) ? "" : `<button class="btn ghost" id="puDone">Doel van stap ${st} gehaald${st !== "C" ? " → door naar " + String.fromCharCode(st.charCodeAt(0) + 1) : ""}</button>`}
+  </section>
+  <section class="card"><p class="eyebrow">Geschiedenis</p>
+    ${hist.length ? `<div class="hist">${hist.slice(0, 8).map(histRow).join("")}</div>` : `<p class="empty">Nog niets gelogd.</p>`}
+  </section>`;
+};
+AFTER.pullup = () => {
+  const p = P();
+  initWheel("pSets", SETS, v => cur.sets = v);
+  initWheel("pReps", REPS, v => cur.reps = v);
+  $$("[data-step]").forEach(b => b.onclick = () => { p.pullupStep = b.dataset.step; save(); go("pullup"); });
+  $("#puSave").onclick = () => {
+    addSession({ module: "goals", kind: "pullup", exercise: `Pull-up stap ${p.pullupStep} (${PULLUP_STEPS[p.pullupStep].name})`, step: p.pullupStep, sets: cur.sets, reps: cur.reps, weight_kg: "", notes: $("#pu_notes").value.trim(), source: "handmatig" });
+    toast("Pull-up sessie opgeslagen"); go("pullup");
+  };
+  const d = $("#puDone");
+  if (d) d.onclick = () => {
+    const st = p.pullupStep; if (!p.pullupDone.includes(st)) p.pullupDone.push(st);
+    addSession({ module: "goals", kind: "pullup", exercise: `Pull-up stap ${st} gehaald`, step: st, sets: "", reps: "", weight_kg: "", notes: "mijlpaal", source: "mijlpaal" });
+    if (st !== "C") p.pullupStep = String.fromCharCode(st.charCodeAt(0) + 1);
+    save(); toast(st === "C" ? "Alle stappen gehaald!" : `Stap ${st} gehaald. Door naar ${p.pullupStep}`); go("pullup");
+  };
+};
+
+/* ---------- Data & export ---------- */
+const pad = (n) => String(n).padStart(2, "0");
+const localDay = (t) => { const d = new Date(t); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const localTime = (t) => { const d = new Date(t); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const dayLabel = (day) => new Date(day + "T12:00").toLocaleDateString("nl-NL", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+const r2 = (n) => Math.round(n * 100) / 100;
+const vol = (s) => (s.sets && s.reps && s.weight_kg) ? s.sets * s.reps * s.weight_kg : "";
+const isMilestone = (s) => s.source === "mijlpaal";
+const isStrength = (s) => !isMilestone(s) && (s.module === "machine" || s.module === "free" || s.kind === "pullup");
+const isHold = (s) => s.kind === "hang" || s.kind === "stretch";
+const whichProfiles = (which) => Object.keys(PROFILES).filter(p => which === "all" || which === p);
+const sessionsOf = (p) => [...state.data[p].sessions].sort((a, b) => a.ts.localeCompare(b.ts));
+
+const COLS = [
+  ["datum", s => localDay(s.ts)], ["tijd", s => localTime(s.ts)], ["profiel", s => PROFILES[s.profile] || s.profile],
+  ["module", s => MODULES[s.module] || s.module], ["oefening", s => s.exercise], ["sets", s => s.sets], ["herhalingen", s => s.reps], ["gewicht_kg", s => s.weight_kg],
+  ["volume_kg", vol], ["seconden", s => s.seconds], ["pullup_stap", s => s.step],
+  ["duur_min", s => s.duration_min], ["afstand_km", s => s.distance_km], ["kcal_toestel", s => s.kcal], ["niveau", s => s.level],
+  ["watch_actieve_kcal", s => s.watch_active_kcal], ["watch_totaal_kcal", s => s.watch_total_kcal], ["hartslag_gem", s => s.hr_avg], ["hartslag_max", s => s.hr_max],
+  ["toestel_instellingen", s => s.settings || [s.setting_seat && "Zithoogte=" + s.setting_seat, s.setting_back && "Rugleuning=" + s.setting_back, s.setting_extra && "Overig=" + s.setting_extra].filter(Boolean).join("; ")],
+  ["foto", s => s.photo ? "ja" : ""], ["bron", s => s.source], ["notities", s => s.notes], ["id", s => s.id]
+];
+function toCSV(which, sep) {
+  const rows = whichProfiles(which).flatMap(sessionsOf).sort((a, b) => a.ts.localeCompare(b.ts));
+  const cell = (v) => {
+    if (v == null) v = "";
+    if (typeof v === "number" && sep === ";") v = String(v).replace(".", ",");
+    v = String(v);
+    return /[",;\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v;
+  };
+  return [COLS.map(c => c[0]).join(sep), ...rows.map(r => COLS.map(c => cell(c[1](r))).join(sep))].join("\r\n");
+}
+
+/* JSON voor AI: per profiel de toestellen en alle sessies, zonder foto's en zonder lege velden. */
+function toAIJSON(which) {
+  const out = { app: "Cabana Fitness", geexporteerd: new Date().toISOString(), eenheden: { gewicht: "kg", afstand: "km", duur: "min" }, profielen: {} };
+  for (const p of whichProfiles(which)) {
+    const d = state.data[p];
+    out.profielen[PROFILES[p]] = {
+      toestellen: d.machines.map(m => ({ naam: m.name, instellingen: Object.fromEntries(Object.entries(m.settings || {}).filter(([, v]) => v)), commentaar: m.comment || undefined })),
+      pullup_stap: d.pullupStep,
+      sessies: sessionsOf(p).map(s => Object.fromEntries(COLS.filter(([k]) => k !== "profiel" && k !== "foto").map(([k, f]) => [k, f(s)]).filter(([, v]) => v !== "" && v != null)))
+    };
+  }
+  return JSON.stringify(out, null, 1);
+}
+
+/* ---------- Obsidian: markdown-tabellen, YAML-properties en [[links]] ---------- */
+const mdc = (v) => { const t = String(v ?? "").replace(/\|/g, "\\|").replace(/[\r\n]+/g, " ").trim(); return t || " "; };
+const yq = (v) => JSON.stringify(String(v));
+const fname = (s) => String(s).replace(/[\\/:*?"<>|#^[\]]/g, "-").replace(/\s+/g, " ").trim();
+const exNote = (p, ex) => `${fname(ex)} · ${PROFILES[p]}`;
+const table = (head, rows) => rows.length ? [`| ${head.join(" | ")} |`, `|${head.map(() => " --- ").join("|")}|`, ...rows.map(r => `| ${r.map(mdc).join(" | ")} |`)].join("\n") : "";
+const byDay = (list) => { const m = new Map(); for (const s of list) { const d = localDay(s.ts); if (!m.has(d)) m.set(d, []); m.get(d).push(s); } return m; };
+const setsReps = (s) => (s.sets || s.reps) ? `${s.sets || "?"} × ${s.reps || "?"}` : "";
+
+function dayBody(p, list, h, links) {
+  const ex = (s) => links ? `[[${exNote(p, s.exercise)}]]` : s.exercise;
+  const str = list.filter(isStrength), car = list.filter(s => s.module === "cardio"), hold = list.filter(isHold), mile = list.filter(isMilestone);
+  const out = [];
+  if (str.length) out.push(`${h} Kracht`, table(["Tijd", "Oefening", "Sets × herh.", "Gewicht (kg)", "Volume (kg)", "Instellingen", "Notitie"],
+    str.map(s => [localTime(s.ts), ex(s), setsReps(s), kg(s.weight_kg), kg(vol(s)), s.settings, s.notes])));
+  if (car.length) out.push(`${h} Cardio`, table(["Tijd", "Toestel", "Duur (min)", "Afstand (km)", "Kcal toestel", "Watch actief", "Hartslag gem / max", "Notitie"],
+    car.map(s => [localTime(s.ts), ex(s), kg(s.duration_min), kg(s.distance_km), s.kcal, s.watch_active_kcal, [s.hr_avg, s.hr_max].filter(x => x !== "" && x != null).join(" / "), s.notes])));
+  if (hold.length) out.push(`${h} Hangen & rekken`, table(["Tijd", "Oefening", "Seconden"], hold.map(s => [localTime(s.ts), ex(s), s.seconds])));
+  if (mile.length) out.push(`${h} Mijlpalen`, mile.map(s => `- ${localTime(s.ts)} ${s.exercise}`).join("\n"));
+  return out.join("\n\n");
+}
+function dayStats(list) {
+  return { volume: r2(list.filter(isStrength).reduce((a, s) => a + (vol(s) || 0), 0)), cardio: r2(list.filter(s => s.module === "cardio").reduce((a, s) => a + (+s.duration_min || 0), 0)), n: list.filter(s => !isMilestone(s)).length };
+}
+
+/* Per oefening: eerste, laatste en beste prestatie. */
+function progressRows(p, links) {
+  const m = new Map();
+  for (const s of sessionsOf(p).filter(s => !isMilestone(s))) { if (!m.has(s.exercise)) m.set(s.exercise, []); m.get(s.exercise).push(s); }
+  const val = (s) => s.module === "cardio" ? (s.duration_min !== "" && s.duration_min != null ? kg(s.duration_min) + " min" : describe(s)) : isHold(s) ? s.seconds + " sec" : (s.weight_kg !== "" && s.weight_kg != null ? `${kg(s.weight_kg)} kg · ${setsReps(s)}` : setsReps(s));
+  const best = (l) => {
+    if (l[0].module === "cardio") { const b = Math.max(...l.map(s => +s.distance_km || 0)); return b ? kg(b) + " km" : ""; }
+    if (isHold(l[0])) return Math.max(...l.map(s => +s.seconds || 0)) + " sec";
+    const w = Math.max(...l.map(s => +s.weight_kg || 0)); return w ? kg(w) + " kg" : Math.max(...l.map(s => +s.reps || 0)) + " herh.";
+  };
+  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0], "nl")).map(([ex, l]) => [links ? `[[${exNote(p, ex)}]]` : ex, MODULES[l[0].module], l.length, `${localDay(l[0].ts)}: ${val(l[0])}`, `${localDay(l[l.length - 1].ts)}: ${val(l[l.length - 1])}`, best(l)]);
+}
+const PROG_HEAD = ["Oefening", "Module", "Sessies", "Eerste", "Laatste", "Beste"];
+
+/* Eén notitie met alles: handig om te kopiëren en te plakken in Obsidian of een AI-chat. */
+function toLogbook(which) {
+  const ps = whichProfiles(which), today = localDay(new Date());
+  const out = ["---", "type: cabana-logboek", `geexporteerd: ${today}`, `profielen: [${ps.map(p => yq(PROFILES[p])).join(", ")}]`, `tags: [cabana${ps.map(p => ", cabana/" + p).join("")}]`, "---", "", "# Cabana logboek", ""];
+  for (const p of ps) {
+    const all = sessionsOf(p);
+    out.push(`## ${PROFILES[p]}`, "");
+    if (!all.length) { out.push("_Nog geen sessies._", ""); continue; }
+    out.push("### Progressie per oefening", "", table(PROG_HEAD, progressRows(p, false)), "", "### Dagboek", "");
+    for (const [day, list] of [...byDay(all)].reverse()) {
+      const st = dayStats(list);
+      out.push(`#### ${day} · ${dayLabel(day)}`, "", `${st.n} oefeningen${st.volume ? ` · ${kg(st.volume)} kg volume` : ""}${st.cardio ? ` · ${kg(st.cardio)} min cardio` : ""}`, "", dayBody(p, list, "#####", false), "");
+    }
+  }
+  return out.join("\n").replace(/\n{3,}/g, "\n\n");
+}
+
+/* Vault-map: een notitie per trainingsdag en per oefening, met properties voor Dataview en Bases. */
+function toVault(which) {
+  const files = [], ps = whichProfiles(which), root = "Cabana";
+  const ov = ["---", "type: cabana-overzicht", `geexporteerd: ${localDay(new Date())}`, "tags: [cabana]", "---", "", "# Cabana overzicht", ""];
+  for (const p of ps) {
+    const all = sessionsOf(p), name = PROFILES[p], health = state.data[p].health || {};
+    ov.push(`## ${name}`, "", all.length ? table(PROG_HEAD, progressRows(p, true)) : "_Nog geen sessies._", "");
+    for (const [day, list] of byDay(all)) {
+      const st = dayStats(list), mods = [...new Set(list.map(s => MODULES[s.module]))];
+      files.push({ name: `${root}/${name}/Dagen/${day} ${name}.md`, text: ["---", `datum: ${day}`, `profiel: ${name}`, "type: cabana-training", `modules: [${mods.map(yq).join(", ")}]`, `oefeningen: ${st.n}`, `volume_kg: ${st.volume}`, `cardio_min: ${st.cardio}`, ...(health[day] && health[day].sent ? ["apple_gezondheid: true"] : []), `tags: [cabana, cabana/${p}]`, "---", "", `# ${dayLabel(day)} · ${name}`, "", dayBody(p, list, "##", true), ""].join("\n") });
+    }
+    const m = new Map();
+    for (const s of all.filter(s => !isMilestone(s))) { if (!m.has(s.exercise)) m.set(s.exercise, []); m.get(s.exercise).push(s); }
+    for (const [ex, l] of m) {
+      const f = l[0], lastS = l[l.length - 1], cardio = f.module === "cardio", hold = isHold(f);
+      const dayLink = (s) => `[[${localDay(s.ts)} ${name}]]`;
+      let rows, head, extra = [];
+      if (cardio) { head = ["Datum", "Duur (min)", "Afstand (km)", "Kcal toestel", "Watch actief", "Hartslag gem"]; rows = l.map(s => [dayLink(s), kg(s.duration_min), kg(s.distance_km), s.kcal, s.watch_active_kcal, s.hr_avg]); }
+      else if (hold) { head = ["Datum", "Seconden", "Verschil"]; rows = l.map((s, i) => [dayLink(s), s.seconds, i ? diff(s.seconds, l[i - 1].seconds, " sec") : ""]); extra = [`beste_seconden: ${Math.max(...l.map(s => +s.seconds || 0))}`]; }
+      else {
+        head = ["Datum", "Sets × herh.", "Gewicht (kg)", "Volume (kg)", "Verschil gewicht", "Notitie"];
+        rows = l.map((s, i) => [dayLink(s), setsReps(s), kg(s.weight_kg), kg(vol(s)), i ? diff(s.weight_kg, l[i - 1].weight_kg, " kg") : "", s.notes]);
+        const w = l.map(s => +s.weight_kg || 0);
+        extra = [`start_gewicht_kg: ${w[0]}`, `huidig_gewicht_kg: ${w[w.length - 1]}`, `beste_gewicht_kg: ${Math.max(...w)}`, `max_volume_kg: ${Math.max(...l.map(s => +vol(s) || 0))}`];
+      }
+      files.push({ name: `${root}/${name}/Oefeningen/${exNote(p, ex)}.md`, text: ["---", `oefening: ${yq(ex)}`, `profiel: ${name}`, `module: ${yq(MODULES[f.module])}`, "type: cabana-oefening", `sessies: ${l.length}`, `eerste: ${localDay(f.ts)}`, `laatste: ${localDay(lastS.ts)}`, ...extra, `tags: [cabana, cabana/${p}]`, "---", "",
+        `# ${ex} · ${name}`, "", ...(lastS.settings ? [`> Instellingen: ${lastS.settings}`, ""] : []), "## Progressie", "", table(head, rows), ""].join("\n") });
+    }
+  }
+  ov.push("## Dataview", "", "Met de Dataview-plugin zie je hier alle trainingsdagen:", "", "```dataview", 'TABLE profiel, oefeningen, volume_kg, cardio_min FROM #cabana WHERE type = "cabana-training" SORT datum DESC', "```", "");
+  files.unshift({ name: `${root}/Cabana overzicht.md`, text: ov.join("\n") });
+  return files;
+}
+function diff(a, b, unit) {
+  if (a === "" || a == null || b === "" || b == null) return "";
+  const d = r2(a - b); return d > 0 ? `+${kg(d)}${unit}` : d < 0 ? `${kg(d).replace("-", "−")}${unit}` : "=";
+}
+
+/* Minimale zip-schrijver (zonder compressie), zodat de vault-map als één bestand kan. */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = (b) => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+function zip(files) {
+  const enc = new TextEncoder(), parts = [], central = []; let off = 0;
+  const d = new Date(), time = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1), date = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  for (const f of files) {
+    const name = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30)), c = new DataView(new ArrayBuffer(46));
+    h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(10, time, true); h.setUint16(12, date, true);
+    h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true);
+    c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(12, time, true); c.setUint16(14, date, true);
+    c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+    parts.push(h, name, data); central.push(c, name);
+    off += 30 + name.length + data.length;
+  }
+  const size = central.reduce((a, x) => a + x.byteLength, 0), e = new DataView(new ArrayBuffer(22));
+  e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, size, true); e.setUint32(16, off, true);
+  return new Blob([...parts, ...central, e], { type: "application/zip" });
+}
+
+/* ---------- Apple Gezondheid via de app Opdrachten ----------
+   Een website kan niet zelf in HealthKit schrijven. De app geeft de training als JSON door aan de
+   opdracht "Cabana naar Gezondheid", die met de actie "Registreer training" een workout vastlegt. */
+const SHORTCUT = "Cabana naar Gezondheid";
+const healthOf = () => (P().health = P().health || {});
+const healthList = (day) => P().sessions.filter(s => localDay(s.ts) === day && s.module !== "cardio" && !isMilestone(s)).sort((a, b) => a.ts.localeCompare(b.ts));
+function healthDraft(day) {
+  const list = healthList(day); if (!list.length) return null;
+  const saved = healthOf()[day] || {};
+  const start = new Date(new Date(list[0].ts).getTime() - 10 * 60000), end = new Date(list[list.length - 1].ts);
+  const min = saved.min || Math.max(15, Math.round((end - start) / 60000));
+  return { day, list, start: saved.start || localTime(start), min, kcal: saved.kcal != null && saved.kcal !== "" ? saved.kcal : Math.round(min * 5), sent: saved.sent || "" };
+}
+function healthPayload(dr) {
+  const st = dayStats(dr.list);
+  return { app: "Cabana Fitness", profiel: PROFILES[state.profile], type: "Krachttraining", start: `${dr.day} ${dr.start}`, minuten: +dr.min, kcal: +dr.kcal || 0,
+    oefeningen: st.n, volume_kg: st.volume, samenvatting: dr.list.map(s => `${s.exercise}: ${describe(s)}`).join("\n") };
+}
+function sendToHealth(dr) {
+  healthOf()[dr.day] = { start: dr.start, min: dr.min, kcal: dr.kcal, sent: new Date().toISOString() }; save();
+  const url = `shortcuts://run-shortcut?name=${encodeURIComponent(SHORTCUT)}&input=text&text=${encodeURIComponent(JSON.stringify(healthPayload(dr)))}`;
+  try { (window.top || window).location.href = url; } catch (e) { try { location.href = url; } catch (e2) {} }
+  toast("Opdrachten opent. Gebeurt er niets? Zet de app op je beginscherm.");
+}
+const healthDays = () => [...new Set(P().sessions.filter(s => s.module !== "cardio" && !isMilestone(s)).map(s => localDay(s.ts)))].sort().reverse();
+
+VIEWS.health = () => {
+  const days = healthDays();
+  const day = route.day && days.includes(route.day) ? route.day : days[0];
+  const dr = day && healthDraft(day);
+  const st = dr && dayStats(dr.list);
+  return `${backBtn("data", "Data & export")}
+  <div class="head"><h1>Apple Gezondheid</h1><p>Stuur je krachttraining als workout naar Gezondheid en je Activiteit-ringen. De oefeningen, sets en gewichten gaan mee als samenvatting.</p></div>
+  ${!dr ? `<section class="card"><p class="empty">Nog geen krachttraining gelogd voor ${PROFILES[state.profile]}. Cardio laat je door je Apple Watch zelf vastleggen.</p></section>` : `
+  <section class="card">
+    ${days.length > 1 ? `<div class="chips">${days.slice(0, 6).map(d => `<button class="chip" data-day="${d}" aria-pressed="${d === day}">${d === localDay(new Date()) ? "Vandaag" : new Date(d + "T12:00").toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" })}</button>`).join("")}</div>` : ""}
+    <h3>${esc(dayLabel(day))}</h3>
+    <div class="stats"><div><b>${st.n}</b><span>oefeningen</span></div><div><b>${kg(st.volume) || 0}</b><span>kg volume</span></div><div><b id="hMinB">${dr.min}</b><span>minuten</span></div></div>
+    <div class="hist">${dr.list.map(s => `<div><span class="l"><b>${esc(s.exercise)}</b><span>${localTime(s.ts)} · ${esc(describe(s))}</span></span></div>`).join("")}</div>
+    <div class="row">
+      <label class="f">Starttijd<input class="i" id="hStart" type="time" value="${dr.start}"></label>
+      <label class="f">Duur (min)<input class="i" id="hMin" inputmode="numeric" value="${dr.min}"></label>
+      <label class="f">Actieve kcal<input class="i" id="hKcal" inputmode="numeric" value="${dr.kcal}"></label>
+    </div>
+    <p class="muted small" style="margin:0">Duur en kcal zijn een schatting uit je logtijden (5 kcal per minuut). Pas ze aan als je het beter weet.</p>
+    <button class="btn primary big" id="hSend">${dr.sent ? "Nog eens naar Gezondheid" : "Stuur naar Apple Gezondheid"}</button>
+    ${dr.sent ? `<p class="sent">Verstuurd ${esc(fmtDate(dr.sent))}. Nog eens sturen maakt een tweede workout.</p>` : ""}
+    <button class="btn ghost" id="hCopy">Kopieer gegevens</button>
+    <pre class="csv" id="hPrev" hidden></pre>
+  </section>
+  <section class="card"><p class="muted small" style="margin:0"><b>Let op dubbel tellen.</b> Heb je op je Apple Watch zelf een workout Krachttraining gestart? Dan staat hij al in Gezondheid. Stuur hem dan niet nog eens.</p></section>`}
+  <section class="card">
+    <details class="plate how">
+      <summary><span><b>Eenmalig: opdracht instellen</b>Zo maak je "${SHORTCUT}" in de app Opdrachten</span></summary>
+      <ol>
+        <li>Open <b>Opdrachten</b> en tik op <b>+</b>. Noem de opdracht precies <b>${SHORTCUT}</b>.</li>
+        <li>Voeg <b>Haal woordenboek op uit invoer</b> toe (Get Dictionary from Input) en kies als invoer <b>Opdrachtinvoer</b>.</li>
+        <li>Voeg drie keer <b>Haal woordenboekwaarde op</b> toe (Get Dictionary Value), met als sleutel <b>start</b>, <b>minuten</b> en <b>kcal</b>.</li>
+        <li>Voeg <b>Registreer training</b> toe (Log Workout, bij Gezondheid). Kies type <b>Traditionele krachttraining</b>. Zet bij Start de waarde van <b>start</b>, bij Duur de waarde van <b>minuten</b> in minuten, en bij Energie de waarde van <b>kcal</b>.</li>
+        <li>Optioneel: <b>Toon melding</b> met de woordenboekwaarde <b>samenvatting</b>, dan zie je welke oefeningen zijn meegegaan.</li>
+        <li>Tik hier op <b>Stuur naar Apple Gezondheid</b> en geef Opdrachten één keer toestemming om trainingen in Gezondheid te zetten.</li>
+      </ol>
+      <p class="muted small" style="margin:0">De namen van acties kunnen per iOS-versie iets anders heten. Zoek in Opdrachten op "woordenboek" of "training". Doe dit op de iPhone van Patrick en die van Paula apart: iedereen stuurt naar zijn eigen Gezondheid.</p>
+    </details>
+  </section>`;
+};
+AFTER.health = () => {
+  $$("[data-day]").forEach(b => b.onclick = () => go("health", { day: b.dataset.day }));
+  const days = healthDays(); const day = route.day && days.includes(route.day) ? route.day : days[0];
+  if (!day || !$("#hSend")) return;
+  const read = () => {
+    const dr = healthDraft(day);
+    dr.start = $("#hStart").value || dr.start; dr.min = Math.max(1, parseInt($("#hMin").value, 10) || dr.min); dr.kcal = parseInt($("#hKcal").value, 10) || 0;
+    $("#hMinB").textContent = dr.min; return dr;
+  };
+  ["#hStart", "#hMin", "#hKcal"].forEach(id => $(id).addEventListener("change", () => { const dr = read(); const h = healthOf(); h[day] = Object.assign({}, h[day], { start: dr.start, min: dr.min, kcal: dr.kcal }); save(); }));
+  $("#hSend").onclick = () => { buzz(); sendToHealth(read()); setTimeout(() => go("health", { day }), 600); };
+  $("#hCopy").onclick = () => { const t = JSON.stringify(healthPayload(read()), null, 1); const pre = $("#hPrev"); pre.hidden = false; pre.textContent = t; copy(t, pre); };
+};
+
+/* ---------- Data-scherm ---------- */
+let exp = { which: "all", sep: ",", md: "log" };
+VIEWS.data = () => {
+  const n = (p) => state.data[p].sessions.length;
+  const used = (() => { try { return Math.round((localStorage.getItem(KEY) || "").length / 1024); } catch (e) { return 0; } })();
+  const vault = exp.md === "vault" ? toVault(exp.which) : null;
+  const mdPrev = vault ? `${vault.length} notities:\n${vault.map(f => "  " + f.name).join("\n")}\n\n── ${vault[0].name} ──\n${vault[0].text}` : toLogbook(exp.which);
+  return `${backBtn("home", "Dashboard")}
+  <div class="head"><h1>Data &amp; export</h1><p>Naar Apple Gezondheid, Obsidian, Excel of een AI.</p></div>
+  <section class="card">
+    <div class="stats"><div><b>${n("patrick")}</b><span>Patrick</span></div><div><b>${n("paula")}</b><span>Paula</span></div><div><b>${used}</b><span>kB opgeslagen</span></div></div>
+    <label class="f">Wie exporteren<select class="i" id="exWho"><option value="all">Iedereen</option><option value="patrick">Patrick</option><option value="paula">Paula</option></select></label>
+  </section>
+  <section class="card">
+    <p class="eyebrow">Achtergrond</p>
+    <div class="chips"><button class="chip" data-bg="photo" aria-pressed="${state.bg !== "sunset"}">Strandfoto</button><button class="chip" data-bg="sunset" aria-pressed="${state.bg === "sunset"}">Getekende zonsondergang</button></div>
+  </section>
+  <section class="card">
+    <p class="eyebrow">Apple Gezondheid</p>
+    <p class="muted small" style="margin:0">Je krachttraining van ${PROFILES[state.profile]} als workout in Gezondheid en Fitness, met één tik via Opdrachten.</p>
+    <button class="btn primary" data-go="health">Naar Apple Gezondheid</button>
+  </section>
+  <section class="card">
+    <p class="eyebrow">Obsidian</p>
+    <label class="f">Vorm<select class="i" id="exMd"><option value="log">Logboek: één notitie met tabellen</option><option value="vault">Vault-map (zip): notitie per dag en per oefening</option></select></label>
+    <p class="muted small" style="margin:0">${vault ? "Pak de zip uit in je vault. Dagen en oefeningen zijn aan elkaar gelinkt en hebben properties (datum, volume_kg, beste_gewicht_kg) voor Dataview en Bases." : "Plak in een lege notitie in Obsidian: tabellen per oefening en per dag, met properties bovenaan. Werkt ook als bron voor een AI."}</p>
+    <div class="row"><button class="btn primary" id="mdDl">${vault ? "Download zip" : "Download .md"}</button>${vault ? "" : `<button class="btn ghost" id="mdCopy">Kopieer markdown</button>`}</div>
+    <pre class="csv" id="mdPrev">${esc(mdPrev)}</pre>
+  </section>
+  <section class="card">
+    <p class="eyebrow">Progressie-sheet (CSV)</p>
+    <label class="f">Formaat<select class="i" id="exSep"><option value=",">Komma (Numbers, Obsidian, AI)</option><option value=";">Puntkomma (Excel NL)</option></select></label>
+    <div class="row"><button class="btn primary" id="exDl">Download CSV</button><button class="btn ghost" id="exCopy">Kopieer CSV</button></div>
+    <pre class="csv" id="csvPrev">${esc(toCSV(exp.which, exp.sep))}</pre>
+  </section>
+  <section class="card">
+    <p class="eyebrow">JSON</p>
+    <p class="muted small" style="margin:0">Voor AI: alle sessies en toestelinstellingen per persoon, zonder foto's en lege velden. De back-up bevat alles, ook foto's, om terug te zetten op een andere iPhone.</p>
+    <div class="row"><button class="btn ghost" id="aiCopy">Kopieer JSON voor AI</button><button class="btn ghost" id="aiDl">Download JSON voor AI</button></div>
+    <pre class="csv" id="aiPrev" hidden></pre>
+    <div class="row"><button class="btn ghost" id="bkDl">Back-up downloaden</button>
+      <label class="btn ghost" style="position:relative;overflow:hidden">Importeren<input type="file" id="bkIn" accept="application/json,.json" style="position:absolute;inset:0;opacity:0"></label></div>
+  </section>
+  <section class="card" id="wipeBox">
+    <p class="eyebrow">Opruimen</p>
+    <button class="btn danger" id="wipe">Alle sessies van ${PROFILES[state.profile]} wissen</button>
+  </section>`;
+};
+function download(name, data, type) {
+  try {
+    const blob = data instanceof Blob ? data : new Blob([data], { type });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    toast("Download gestart. Werkt dat niet in deze preview, gebruik Kopieer.");
+  } catch (e) { toast("Download niet mogelijk, gebruik Kopieer"); }
+}
+async function copy(text, preEl) {
+  try { await navigator.clipboard.writeText(text); toast("Gekopieerd naar klembord"); }
+  catch (e) { const r = document.createRange(); r.selectNodeContents(preEl); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Tekst geselecteerd, kies Kopieer"); }
+}
+AFTER.data = () => {
+  $$("[data-bg]").forEach(b => b.onclick = () => { state.bg = b.dataset.bg; save(); buzz(); go("data"); });
+  $("#exWho").value = exp.which; $("#exSep").value = exp.sep; $("#exMd").value = exp.md;
+  $("#exWho").onchange = (e) => { exp.which = e.target.value; go("data"); };
+  $("#exSep").onchange = (e) => { exp.sep = e.target.value; go("data"); };
+  $("#exMd").onchange = (e) => { exp.md = e.target.value; go("data"); };
+  const stamp = localDay(new Date());
+  $("#mdDl").onclick = () => exp.md === "vault"
+    ? download(`cabana-obsidian-${exp.which}-${stamp}.zip`, zip(toVault(exp.which)))
+    : download(`Cabana logboek ${stamp}.md`, toLogbook(exp.which), "text/markdown;charset=utf-8");
+  const mc = $("#mdCopy"); if (mc) mc.onclick = () => copy(toLogbook(exp.which), $("#mdPrev"));
+  $("#exDl").onclick = () => download(`cabana-progressie-${exp.which}-${stamp}.csv`, "\ufeff" + toCSV(exp.which, exp.sep), "text/csv;charset=utf-8");
+  $("#exCopy").onclick = () => copy(toCSV(exp.which, exp.sep), $("#csvPrev"));
+  $("#aiCopy").onclick = () => { const t = toAIJSON(exp.which), pre = $("#aiPrev"); pre.hidden = false; pre.textContent = t; copy(t, pre); };
+  $("#aiDl").onclick = () => download(`cabana-ai-${exp.which}-${stamp}.json`, toAIJSON(exp.which), "application/json");
+  $("#bkDl").onclick = () => download(`cabana-backup-${stamp}.json`, JSON.stringify(state, null, 1), "application/json");
+  $("#bkIn").onchange = (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try { const s = JSON.parse(r.result); if (!s.data) throw 0; state = migrate(s); for (const p in PROFILES) if (!state.data[p]) state.data[p] = blankProfile(); save(); toast("Back-up teruggezet"); go("data"); }
+      catch (err) { toast("Dit is geen Cabana-back-up (JSON)"); }
+    };
+    r.readAsText(f);
+  };
+  $("#wipe").onclick = () => {
+    const box = $("#wipeBox"); box.classList.add("confirm");
+    box.innerHTML = `<p style="margin:0"><b>Weet je het zeker?</b> Alle ${P().sessions.length} sessies van ${PROFILES[state.profile]} verdwijnen. Toestelinstellingen blijven staan.</p>
+      <div class="row"><button class="btn ghost" id="wNo">Annuleer</button><button class="btn danger" id="wYes">Ja, wissen</button></div>`;
+    $("#wNo").onclick = () => go("data");
+    $("#wYes").onclick = () => { P().sessions = []; save(); toast("Sessies gewist"); go("data"); };
+  };
+};
+
+/* ---------- Toestel-foto's: groot bekijken met stappen en je eigen instellingen ---------- */
+const setPills = (it) => Object.entries((it && it.settings) || {}).filter(([, v]) => v).map(([k, v]) => `<span class="glasspill">${esc(k)} ${esc(v)}</span>`).join("");
+function zoom(key) {
+  const d = CATALOG.find(c => c.key === key); if (!d) return;
+  const it = P().machines.find(m => m.key === key);
+  const box = document.createElement("div");
+  box.className = "lightbox"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); box.setAttribute("aria-label", d.name);
+  const pills = setPills(it);
+  box.innerHTML = `<div class="lb-in">
+    <button class="lb-close" aria-label="Sluiten">×</button>
+    <img src="img/${d.img}.jpg" alt="Instructiebord ${esc(d.name)}">
+    <div><h2>${esc(d.name)}</h2><p class="muted" style="margin:4px 0 0">${esc(d.nl)}</p></div>
+    <div class="pills">${pills || `<span class="glasspill">Nog geen instellingen bewaard</span>`}</div>
+    <ol>${d.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ol>
+  </div>`;
+  const close = () => { box.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = (e) => { if (e.key === "Escape") close(); };
+  box.addEventListener("click", (e) => { if (e.target === box || e.target.closest(".lb-close")) close(); });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(box);
+  $(".lb-close", box).focus();
+}
+
+/* ---------- Trainingsschema's op de Matrix-toestellen ---------- */
+/* m = toestel (CATALOG-key), sub = oefening op het kabelstation of de fly. */
+const WAVE = [
+  { name: "Week 1", short: "3 × 5", sets: [[65, 5], [75, 5], [85, 5, true]] },
+  { name: "Week 2", short: "3 × 3", sets: [[70, 3], [80, 3], [90, 3, true]] },
+  { name: "Week 3", short: "5 · 3 · 1", sets: [[75, 5], [85, 3], [95, 1, true]] },
+  { name: "Week 4", short: "Deload", sets: [[40, 5], [50, 5], [60, 5]] }
+];
+const PROGRAMS = [
+  { id: "bbb", name: "Boring But Big", short: "BBB", tag: "5/3/1 · 4 dagen per week · kracht",
+    intro: "Het krachtschema van Jim Wendler, omgezet naar de Matrix-toestellen. Per dag één hoofdtoestel: eerst drie zware sets volgens de week (de laatste zoveel als lukt), dan 5 × 10 op hetzelfde toestel met 50% van je trainingsmax. Daarna twee hulpoefeningen. Na week 4 begin je opnieuw bij week 1, een stapje zwaarder.",
+    wave: true,
+    days: [
+      { name: "Benen", main: { m: "legpress" }, acc: [{ m: "legcurl", sets: 3, reps: 12 }, { m: "abcrunch", sets: 3, reps: 15 }] },
+      { name: "Borst", main: { m: "chestpress" }, acc: [{ m: "row", sets: 5, reps: 10 }, { m: "cable", sub: "Triceps Pressdown", sets: 3, reps: 12 }] },
+      { name: "Rug", main: { m: "latpull" }, acc: [{ m: "backext", sets: 3, reps: 12 }, { m: "armcurl", sets: 3, reps: 12 }] },
+      { name: "Schouders", main: { m: "cable", sub: "Shoulder Press" }, acc: [{ m: "lateral", sets: 3, reps: 12 }, { m: "fly", sub: "Rear Delt", sets: 3, reps: 15 }] }
+    ] },
+  { id: "circuit", name: "Matrix Circuit", short: "Circuit", tag: "Full body · 3 dagen per week · start",
+    intro: "Hele lichaam in één training, afwisselend A en B (bijv. ma A, wo B, vr A). Rust 60-90 seconden tussen de sets. Haal je 3 × 15, dan stelt de app bij dat toestel één plaatje zwaarder voor.",
+    days: [
+      { name: "Training A", ex: [{ m: "legpress", sets: 3, reps: 12 }, { m: "chestpress", sets: 3, reps: 12 }, { m: "latpull", sets: 3, reps: 12 }, { m: "legcurl", sets: 3, reps: 12 }, { m: "abcrunch", sets: 3, reps: 15 }] },
+      { name: "Training B", ex: [{ m: "legext", sets: 3, reps: 12 }, { m: "row", sets: 3, reps: 12 }, { m: "lateral", sets: 3, reps: 12 }, { m: "adduction", sets: 3, reps: 12 }, { m: "backext", sets: 3, reps: 12 }] }
+    ] },
+  { id: "ppl", name: "Push · Pull · Benen", short: "PPL", tag: "3 dagen per week · spiermassa",
+    intro: "Drukken, trekken en benen elk op een eigen dag, 8 tot 12 herhalingen. Werk per toestel van 3 × 8 naar 3 × 12 en daarna een plaatje zwaarder.",
+    days: [
+      { name: "Push", ex: [{ m: "chestpress", sets: 4, reps: 8 }, { m: "cable", sub: "Shoulder Press", sets: 3, reps: 10 }, { m: "fly", sub: "Pec Fly", sets: 3, reps: 12 }, { m: "lateral", sets: 3, reps: 12 }, { m: "cable", sub: "Triceps Pressdown", sets: 3, reps: 12 }] },
+      { name: "Pull", ex: [{ m: "latpull", sets: 4, reps: 8 }, { m: "row", sets: 3, reps: 10 }, { m: "fly", sub: "Rear Delt", sets: 3, reps: 15 }, { m: "armcurl", sets: 3, reps: 12 }, { m: "backext", sets: 3, reps: 12 }] },
+      { name: "Benen", ex: [{ m: "legpress", sets: 4, reps: 8 }, { m: "legext", sets: 3, reps: 12 }, { m: "legcurl", sets: 3, reps: 12 }, { m: "calfpress", sets: 3, reps: 15 }, { m: "abcrunch", sets: 3, reps: 15 }] }
+    ] }
+];
+function progState() {
+  const p = P();
+  if (!p.prog) p.prog = { id: "", week: 0, day: {}, tm: {} };
+  p.prog.day = p.prog.day || {}; p.prog.tm = p.prog.tm || {};
+  return p.prog;
+}
+const machineByKey = (key) => P().machines.find(m => m.key === key);
+const exKey = (x) => x.m + (x.sub ? "|" + x.sub : "");
+const exName = (x) => { const d = CATALOG.find(c => c.key === x.m); return x.sub ? `${x.sub}` : d.name; };
+const stackVals = (it) => STACKS[stackOf(it)].values || WEIGHTS;
+const snap = (it, w) => { const v = stackVals(it); return v[nearestIdx(v, w)]; };
+/* Trainingsmax (TM) = 90% van je geschatte 1RM (Epley) uit je beste set van de laatste 20 logs op dat toestel. */
+function trainingMax(x) {
+  const it = machineByKey(x.m); if (!it) return { tm: null };
+  const own = progState().tm[exKey(x)];
+  if (own) return { tm: own, own: true, it };
+  const hist = machineSessions(it, x.sub || "").filter(s => +s.weight_kg > 0 && +s.reps > 0).slice(0, 20);
+  if (!hist.length) return { tm: null, it };
+  const best = Math.max(...hist.map(s => s.weight_kg * (1 + Math.min(s.reps, 12) / 30)));
+  return { tm: snap(it, best * 0.9), it };
+}
+/* Werkgewicht voor hulpoefeningen: zelfde regel als het toestelscherm (laatste keer, of één plaatje zwaarder na 15 herhalingen). */
+function workWeight(x) {
+  const it = machineByKey(x.m); if (!it) return null;
+  const last = machineSessions(it, x.sub || "")[0];
+  return last ? suggest(last, STACKS[stackOf(it)].values).weight : null;
+}
+const today = () => localDay(new Date());
+const doneToday = (tag) => P().sessions.some(s => s.prog === tag && localDay(s.ts) === today());
+
+VIEWS.programs = () => {
+  const ps = progState();
+  return `${backBtn("home", "Dashboard")}
+  <div class="head"><h1>Trainingsprogramma's</h1><p>Schema's op de Matrix-toestellen van Cabana. Gewichten komen uit jouw eigen logs, afgerond op de echte gewichtsstapel.</p></div>
+  <section class="progs">
+    ${PROGRAMS.map(pr => {
+      const keys = [...new Set(pr.days.flatMap(d => (d.main ? [d.main] : []).concat(d.acc || d.ex).map(x => x.m)))];
+      return `<button class="item prog${ps.id === pr.id ? " on" : ""}" data-go="program" data-arg='${JSON.stringify({ pid: pr.id })}'>
+        <span class="role" style="color:var(--me);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase">${ps.id === pr.id ? "Jouw schema" : esc(pr.short)}</span>
+        <b>${esc(pr.name)}</b><span>${esc(pr.tag)}</span>
+        <span class="thumbs">${keys.slice(0, 7).map(k => `<img src="img/${CATALOG.find(c => c.key === k).img}.jpg" alt="" loading="lazy">`).join("")}</span>
+      </button>`;
+    }).join("")}
+  </section>
+  <section class="card"><p class="eyebrow">Zo werkt het</p>
+    <p class="small" style="margin:0">Tik bij een oefening op <b>Log</b>: het toestelscherm opent met sets, herhalingen en gewicht al ingevuld. Tik op een foto voor het instructiebord groot, met jouw instellingen.</p>
+  </section>`;
+};
+
+VIEWS.program = () => {
+  const pr = PROGRAMS.find(p => p.id === route.pid); if (!pr) return VIEWS.programs();
+  const ps = progState();
+  const di = Math.min(route.day ?? ps.day[pr.id] ?? 0, pr.days.length - 1);
+  const day = pr.days[di];
+  const wk = ps.week || 0;
+  const back = { pid: pr.id, day: di };
+  const tagBase = `${pr.id}|w${pr.wave ? wk + 1 : 0}|${day.name}`;
+  const label = `${pr.short}${pr.wave ? " week " + (wk + 1) : ""} · ${day.name}`;
+  const logBtn = (x, sets, reps, w, tag) => {
+    const done = doneToday(tag);
+    const arg = esc(JSON.stringify({ m: x.m, sub: x.sub || "", sets, reps, w, tag, label, back }));
+    return `<button class="logbtn${done ? " done" : ""}" data-log="${arg}">${done ? "✓ Gedaan" : "Log"}</button>`;
+  };
+  const photo = (x) => { const d = CATALOG.find(c => c.key === x.m); return `<button class="ph" data-zoom="${x.m}" aria-label="Foto ${esc(d.name)} groot"><img src="img/${d.img}.jpg" alt="" loading="lazy"><span aria-hidden="true">⤢</span></button>`; };
+  const settingsTxt = (x) => { const it = machineByKey(x.m); const s = Object.entries((it && it.settings) || {}).filter(([, v]) => v).map(([k, v]) => `${k} ${v}`).join(" · "); return s ? esc(s) : "Instellingen: tik op de foto voor de stappen"; };
+  const head = (x, role) => { const d = CATALOG.find(c => c.key === x.m); return `<span class="role">${role}</span><h4>${esc(exName(x))}</h4><p class="set-info">${x.sub ? esc(d.name) + " · " : ""}${settingsTxt(x)}</p>`; };
+
+  let body = "";
+  if (pr.wave) {
+    const x = day.main, { tm, own, it } = trainingMax(x);
+    const W = WAVE[wk];
+    const kgOf = (pct) => tm ? snap(it, tm * pct / 100) : null;
+    const lines = W.sets.map(([pct, reps, amrap], i) => {
+      const w = kgOf(pct);
+      return `<div class="setline"><span><b>${reps}${amrap ? "+" : ""} @ ${w != null ? kg(w) + " kg" : pct + "%"}</b><small>Set ${i + 1} · ${pct}% van TM${amrap ? " · zoveel als lukt" : ""}</small></span>${logBtn(x, 1, reps, w, `${tagBase}|main${i}`)}</div>`;
+    }).join("");
+    const bbbW = kgOf(50);
+    const bbb = wk === 3 ? `<p class="set-info" style="margin:8px 0 0">Deload-week: geen 5 × 10, alleen de drie lichte sets.</p>`
+      : `<div class="setline"><span><b>5 × 10 @ ${bbbW != null ? kg(bbbW) + " kg" : "50%"}</b><small>Boring But Big · 50% van TM</small></span>${logBtn(x, 5, 10, bbbW, `${tagBase}|bbb`)}</div>`;
+    const tmRow = `<div class="tm">Trainingsmax <b>${tm ? kg(tm) + " kg" : "nog onbekend"}</b>${tm ? (own ? " · zelf ingesteld" : " · uit je logs") : ""}
+      <button data-tm="-1" data-x="${esc(exKey(x))}" aria-label="Trainingsmax lager">−</button><button data-tm="1" data-x="${esc(exKey(x))}" aria-label="Trainingsmax hoger">+</button>${own ? `<button class="reset" data-tm="0" data-x="${esc(exKey(x))}">Uit logs</button>` : ""}</div>`;
+    body += `<div class="exrow">${photo(x)}<div>${head(x, "Hoofdtoestel")}${tm ? "" : `<p class="hint" style="margin:4px 0 6px;font-size:14px">Log eerst één keer ${esc(exName(x))} (bijv. 3 × 8), dan rekent de app je gewichten uit. Of stel de trainingsmax zelf in met + en −.</p>`}${tmRow}${lines}${bbb}</div></div>`;
+  }
+  body += (day.acc || day.ex).map((x, i) => {
+    const w = workWeight(x);
+    return `<div class="exrow">${photo(x)}<div>${head(x, pr.wave ? "Hulpoefening" : "Oefening " + (i + 1))}
+      <div class="setline"><span><b>${x.sets} × ${x.reps}${w != null ? " @ " + kg(w) + " kg" : ""}</b><small>${w != null ? "Op basis van je laatste keer" : "Eerste keer: kies je startgewicht"}</small></span>${logBtn(x, x.sets, x.reps, w, `${tagBase}|x${i}`)}</div>
+    </div></div>`;
+  }).join("");
+
+  return `${backBtn("programs", "Trainingsprogramma's")}
+  <div class="head"><h1>${esc(pr.name)}</h1><p>${esc(pr.tag)}</p></div>
+  <details class="card plate how"><summary><span><b>Uitleg</b><span class="muted small">${esc(pr.intro.split(". ")[0])}.</span></span></summary>
+    <p class="small" style="margin:0">${esc(pr.intro)}</p>
+    ${pr.wave ? `<table class="wave"><tr><th>Week</th><th>Set 1</th><th>Set 2</th><th>Set 3</th></tr>${WAVE.map((w, i) => `<tr class="${i === wk ? "cur" : ""}"><td>${w.name}</td>${w.sets.map(([p, r, a]) => `<td>${r}${a ? "+" : ""} @ ${p}%</td>`).join("")}</tr>`).join("")}</table>` : ""}
+  </details>
+  ${pr.wave ? `<div class="tabs" role="group" aria-label="Week">${WAVE.map((w, i) => `<button class="chip" data-week="${i}" aria-pressed="${i === wk}">${w.name} · ${w.short}</button>`).join("")}</div>` : ""}
+  <div class="tabs" role="group" aria-label="Dag">${pr.days.map((d, i) => `<button class="chip" data-day="${i}" aria-pressed="${i === di}">${pr.wave ? "Dag " + (i + 1) + " · " : ""}${esc(d.name)}</button>`).join("")}</div>
+  <section class="card"><p class="eyebrow">${esc(label)}</p>${body}</section>
+  ${ps.id === pr.id ? `<p class="small muted" style="margin:0;text-align:center">Dit is jouw actieve schema; het staat op de tegel in het dashboard.</p>` : `<button class="btn primary big" id="progUse">Maak dit mijn schema</button>`}`;
+};
+AFTER.program = () => {
+  const pr = PROGRAMS.find(p => p.id === route.pid); if (!pr) return;
+  const ps = progState();
+  const di = Math.min(route.day ?? ps.day[pr.id] ?? 0, pr.days.length - 1);
+  $$("[data-week]").forEach(b => b.onclick = () => { ps.week = +b.dataset.week; save(); buzz(); go("program", { pid: pr.id, day: di }); });
+  $$("[data-day]").forEach(b => b.onclick = () => { ps.day[pr.id] = +b.dataset.day; save(); buzz(); go("program", { pid: pr.id, day: +b.dataset.day }); });
+  $$("[data-tm]").forEach(b => b.onclick = () => {
+    const k = b.dataset.x, [m, sub] = k.split("|"), x = { m, sub }, d = +b.dataset.tm;
+    if (!d) delete ps.tm[k];
+    else { const { tm, it } = trainingMax(x); if (!it) return; const v = stackVals(it); const i = tm ? nearestIdx(v, tm) + d : 5; ps.tm[k] = v[Math.max(0, Math.min(v.length - 1, i))]; }
+    save(); buzz(); go("program", { pid: pr.id, day: di });
+  });
+  $$("[data-log]").forEach(b => b.onclick = () => {
+    const a = JSON.parse(b.dataset.log), it = machineByKey(a.m);
+    if (!it) return toast("Dit toestel staat niet meer in je lijst");
+    if (a.sub) subPick[it.id] = a.sub;
+    buzz(); go("strength", { id: it.id, preset: { sets: a.sets, reps: a.reps, weight: a.w }, prog: { tag: a.tag, label: a.label }, back: Object.assign({ view: "program" }, a.back) });
+  });
+  const u = $("#progUse"); if (u) u.onclick = () => { ps.id = pr.id; save(); buzz(); toast(`${pr.name} is nu jouw schema`); go("program", { pid: pr.id, day: di }); };
+};
+
+/* ---------- Globale events ---------- */
+/* Tik-feedback op de glazen tegels: indrukken, lichtgolf vanaf je vinger, korte trilling, dan pas door */
+const unpress = () => $$(".tile.pressed").forEach(t => t.classList.remove("pressed"));
+document.addEventListener("pointerdown", (e) => {
+  const t = e.target.closest(".tile"); if (!t) return;
+  t.classList.add("pressed");
+  const r = t.getBoundingClientRect(), w = document.createElement("span");
+  w.className = "ripple"; w.style.left = (e.clientX - r.left) + "px"; w.style.top = (e.clientY - r.top) + "px";
+  t.appendChild(w); setTimeout(() => w.remove(), 650);
+}, { passive: true });
+["pointerup", "pointercancel", "scroll"].forEach(ev => document.addEventListener(ev, () => setTimeout(unpress, 90), { passive: true, capture: true }));
+let leaving = false;
+document.addEventListener("click", (e) => {
+  const g = e.target.closest("[data-go]");
+  if (g && g.classList.contains("tile")) {
+    if (leaving) return; leaving = true; buzz(); g.classList.add("pressed");
+    setTimeout(() => { leaving = false; go(g.dataset.go, g.dataset.arg ? JSON.parse(g.dataset.arg) : {}); }, 170); return;
+  }
+  if (g) { go(g.dataset.go, g.dataset.arg ? JSON.parse(g.dataset.arg) : {}); return; }
+  const z = e.target.closest("[data-zoom]");
+  if (z) { buzz(); zoom(z.dataset.zoom); return; }
+  const d = e.target.closest("[data-del]");
+  if (d) {
+    const row = d.parentElement;
+    if (d.dataset.armed) { P().sessions = P().sessions.filter(s => s.id !== d.dataset.del); save(); toast("Verwijderd"); render(); }
+    else { d.dataset.armed = "1"; d.textContent = "?"; d.style.color = "var(--danger)"; d.style.borderColor = "var(--danger)"; d.setAttribute("aria-label", "Tik nogmaals om te verwijderen"); toast("Tik nogmaals om te verwijderen"); }
+  }
+});
+$$(".seg button").forEach(b => b.onclick = () => { state.profile = b.dataset.p; save(); buzz(); go(route.view === "strength" || route.view === "cardioLog" ? "home" : route.view, route); });
+$("#homeBtn").onclick = () => go("home");
+$("#dataBtn").onclick = () => go("data");
+
+render();
+if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+  /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
+  const APP_VERSION = "cabana-v15";
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
+    fetch("sw.js", { cache: "no-store" }).then(r => r.text()).then(t => { const m = t.match(/cabana-v\d+/); if (m && m[0] !== APP_VERSION) location.reload(); }).catch(() => {});
+  });
+}
+})();
+</script>
