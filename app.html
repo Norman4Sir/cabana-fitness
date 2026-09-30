@@ -383,6 +383,12 @@ fieldset { border-color: var(--glass-edge); background: rgb(255 255 255 / .06); 
 .how[open] summary > span::after { content: "Tik om te sluiten"; }
 .how summary b { font-size: 17px; }
 .how ol { margin: 4px 0 0; }
+/* Toestel: instellingen en stappen ingeklapt zodra je ze hebt ingevuld */
+.setbox summary > span::after { content: "Tik om aan te passen"; }
+.setbox[open] summary > span::after { content: "Tik om in te klappen"; }
+.setbox summary .muted { font-weight: 500; }
+.setbox .settings-grid { margin-top: 10px; }
+.tipsbox summary { font-size: 14px; font-weight: 700; cursor: pointer; color: var(--me); }
 /* ---------- Fase 3: toestel-foto's, lightbox, 5e tegel en trainingsschema's ---------- */
 .tile.wide { grid-column: 1 / -1; min-height: 200px; padding: 16px 18px 18px; }
 .tile.wide .art { inset: 4px 0 4px auto; width: 52%; height: auto; }
@@ -1028,22 +1034,25 @@ VIEWS.strength = () => {
   }
   cur = { sets: sg.sets, reps: sg.reps, weight: sg.weight };
   const set = it.settings || {};
+  const setDone = isMachine && Object.values(set).some(v => v);
+  const setTxt = setDone ? (d.fields || []).filter(f => set[f]).map(f => `${f} ${set[f]}`).join(" · ") : "";
+  const setCard = isMachine ? `<details class="card plate how setbox"${setDone ? "" : " open"}>
+    <summary><span><b>Mijn instellingen</b>${setTxt ? `<span class="muted small">${esc(setTxt)}</span>` : ""}</span></summary>
+    <div class="settings-grid">
+      ${d.fields.map((f, i) => `<label class="f${d.fields.length % 2 && i === d.fields.length - 1 ? " wide" : ""}">${esc(f)}<input class="i" id="s_f${i}" data-field="${esc(f)}" value="${esc(set[f] || "")}" placeholder="bijv. ${i === 0 ? "5" : "3"}"></label>`).join("")}
+      <label class="f wide">Commentaar<textarea class="i" id="s_comment" placeholder="bijv. rug goed tegen de pad, niet op slot">${esc(it.comment)}</textarea></label>
+      <label class="f wide">Gewichtsstapel<select class="i" id="s_stack">${Object.entries(STACKS).map(([k, v]) => `<option value="${k}"${k === stackOf(it) ? " selected" : ""}>${v.label}</option>`).join("")}</select></label>
+    </div>
+  </details>` : "";
   return `${route.back ? backBtn(route.back.view, "Terug naar schema", route.back) : backBtn(module, MODULES[module])}
   <div class="head"><h1>${esc(it.name)}</h1><p>${isMachine ? esc(d.nl) : "Vrije gewichten"}</p></div>
   ${isMachine && d.img ? `<section class="card hero">
     <button class="hero-img" data-zoom="${d.key}" aria-label="Instructiebord ${esc(it.name)} groot bekijken"><img src="img/${d.img}.jpg" alt="Instructiebord ${esc(it.name)}">
       <span class="glasspill zoomtag" aria-hidden="true">⤢ Groot</span>
       <span class="hero-set">${setPills(it) || `<span class="glasspill">Vul hieronder je instellingen in</span>`}</span></button>
-    <div class="hero-body"><p class="eyebrow">Zo stel je hem in</p><ol>${d.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ol></div>
+    <div class="hero-body">${setDone ? `<details class="tipsbox"><summary>Zo stel je hem in</summary><ol>${d.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ol></details>` : `<p class="eyebrow">Zo stel je hem in</p><ol>${d.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ol>`}</div>
   </section>` : ""}
-  ${isMachine ? `<section class="card">
-    <p class="eyebrow">Mijn instellingen</p>
-    <div class="settings-grid">
-      ${d.fields.map((f, i) => `<label class="f${d.fields.length % 2 && i === d.fields.length - 1 ? " wide" : ""}">${esc(f)}<input class="i" id="s_f${i}" data-field="${esc(f)}" value="${esc(set[f] || "")}" placeholder="bijv. ${i === 0 ? "5" : "3"}"></label>`).join("")}
-      <label class="f wide">Commentaar<textarea class="i" id="s_comment" placeholder="bijv. rug goed tegen de pad, niet op slot">${esc(it.comment)}</textarea></label>
-      <label class="f wide">Gewichtsstapel<select class="i" id="s_stack">${Object.entries(STACKS).map(([k, v]) => `<option value="${k}"${k === stackOf(it) ? " selected" : ""}>${v.label}</option>`).join("")}</select></label>
-    </div>
-  </section>` : ""}
+  ${setDone ? "" : setCard}
   <section class="card">
     <p class="eyebrow">Vandaag</p>
     ${subs ? `<label class="f">Oefening<select class="i" id="subSel">${subs.map(x => `<option${x === sub ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>` : ""}
@@ -1060,6 +1069,7 @@ VIEWS.strength = () => {
     <label class="f">Notitie<input class="i" id="st_notes" placeholder="bijv. laatste set zwaar"></label>
     <button class="btn primary big" id="stSave">Opslaan</button>
   </section>
+  ${setDone ? setCard : ""}
   <section class="card"><p class="eyebrow">Geschiedenis${sub ? " · " + esc(sub) : ""}</p>
     ${hist.length ? `<div class="hist">${hist.slice(0, 8).map(histRow).join("")}</div>` : `<p class="empty">Nog geen sessies. Na je eerste keer staat de draaiknop hier automatisch op je laatste gewicht.</p>`}
   </section>`;
@@ -1772,7 +1782,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v20";
+  const APP_VERSION = "cabana-v21";
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
     fetch("sw.js", { cache: "no-store" }).then(r => r.text()).then(t => { const m = t.match(/cabana-v\d+/); if (m && m[0] !== APP_VERSION) location.reload(); }).catch(() => {});
