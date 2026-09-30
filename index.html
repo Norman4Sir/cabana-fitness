@@ -714,6 +714,7 @@ function addSession(s) {
   const rec = Object.assign({ id: uid(), ts: now.toISOString(), profile: state.profile }, s);
   P().sessions.push(rec);
   save();
+  syncSoon();
   return rec;
 }
 function sessionsFor(module, exercise) {
@@ -1653,6 +1654,46 @@ function toXlsx(p) {
   return zip(files);
 }
 
+/* ---------- Google Sheets: elke sessie vanzelf naar je eigen Sheet, via een Apps Script web app ----------
+   Cabana stuurt steeds alle sessies (zonder foto's); het script slaat rijen over die er al staan (zelfde ID). */
+function sheetRow(s) {
+  const n1 = (x) => x === "" || x == null ? "" : r2(+x);
+  return { id: s.id, datum: localDay(s.ts), tijd: localTime(s.ts), profiel: PROFILES[s.profile] || s.profile, onderdeel: MODULES[s.module] || s.module,
+    oefening: s.exercise, sets: n1(num(s.sets)), herhalingen: n1(num(s.reps)), gewicht: n1(num(s.weight_kg)), volume: n1(vol(s)),
+    max: e1rm(s) === "" ? "" : Math.round(e1rm(s) * 10) / 10, duur: n1(num(s.duration_min)), afstand: n1(num(s.distance_km)), kcal: n1(num(s.kcal)),
+    seconden: n1(num(s.seconds)), notitie: s.notes || "" };
+}
+let gsT;
+function syncSheet(manual) {
+  const url = state.gsUrl;
+  if (!url) { if (manual) toast("Plak eerst de Web app URL"); return Promise.resolve(false); }
+  const rows = Object.keys(PROFILES).flatMap(p => state.data[p].sessions).filter(s => !isMilestone(s)).map(sheetRow);
+  const removed = state.gsRemoved || [];
+  return fetch(url, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ rows, removed }) })
+    .then(() => { state.gsAt = new Date().toISOString(); state.gsRemoved = []; save(); if (manual) toast("Verstuurd naar Google Sheets"); return true; })
+    .catch(() => { if (manual) toast("Geen internet: Cabana probeert het later opnieuw"); return false; });
+}
+const syncSoon = () => { if (!state.gsUrl) return; clearTimeout(gsT); gsT = setTimeout(() => syncSheet(false), 1500); };
+function sheetsCard() {
+  return `<section class="card">
+    <p class="eyebrow">Google Sheets</p>
+    <p class="muted small" style="margin:0">Elke oefening die je opslaat, van Patrick en Paula, komt vanzelf in je eigen Google Sheet: een blad Log met alles en per persoon een blad Progressie met grafiek.</p>
+    <label class="f">Web app URL<input class="i" id="gsUrl" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(state.gsUrl || "")}"></label>
+    <div class="row"><button class="btn primary" id="gsSave">${state.gsUrl ? "Nu bijwerken" : "Koppelen en versturen"}</button>${state.gsUrl ? `<button class="btn ghost" id="gsOff">Ontkoppelen</button>` : ""}</div>
+    <p class="muted small" style="margin:0">${state.gsAt ? `Laatst verstuurd: ${esc(fmtDate(state.gsAt))}. Nieuwe oefeningen gaan vanzelf mee.` : "Nog niet gekoppeld."}</p>
+    <details class="plate how">
+      <summary><span><b>Eenmalig: koppeling instellen</b>Op je Mac, in Google Sheets</span></summary>
+      <ol>
+        <li>Maak een nieuwe Google Sheet (sheets.new) en noem hem bijvoorbeeld "Cabana trainingen".</li>
+        <li>Menu <b>Extensions</b> (Extensies) &gt; <b>Apps Script</b>. Wis wat er staat en plak het script dat je van Claude kreeg. Klik op het schijfje om op te slaan.</li>
+        <li>Kies bovenin de functie <b>setup</b> en klik <b>Run</b> (Uitvoeren). Geef toestemming: kies je account, dan <b>Advanced</b> (Geavanceerd) &gt; <b>Go to … (unsafe)</b> &gt; <b>Allow</b>.</li>
+        <li><b>Deploy</b> (Implementeren) &gt; <b>New deployment</b>. Tandwiel &gt; <b>Web app</b>. Execute as: <b>Me</b>, Who has access: <b>Anyone</b>. Klik <b>Deploy</b> en kopieer de <b>Web app URL</b>.</li>
+        <li>Zet die URL op je iPhone (bijvoorbeeld via Notes of AirDrop), plak hem hierboven en tik op <b>Koppelen en versturen</b>.</li>
+      </ol>
+    </details>
+  </section>`;
+}
+
 /* ---------- Apple Gezondheid via de app Opdrachten ----------
    Een website kan niet zelf in HealthKit schrijven. De app geeft de training als JSON door aan de
    opdracht "Cabana naar Gezondheid", die met de actie "Registreer training" een workout vastlegt. */
@@ -1759,6 +1800,7 @@ VIEWS.data = () => {
     <p class="muted small" style="margin:0">Je krachttraining van ${PROFILES[state.profile]} als workout in Gezondheid en Fitness, met één tik via Opdrachten.</p>
     <button class="btn primary" data-go="health">Naar Apple Gezondheid</button>
   </section>
+  ${sheetsCard()}
   <section class="card">
     <p class="eyebrow">Obsidian</p>
     <label class="f">Vorm<select class="i" id="exMd"><option value="log">Logboek: één notitie met tabellen</option><option value="vault">Vault-map (zip): notitie per dag en per oefening</option></select></label>
@@ -1799,6 +1841,12 @@ async function copy(text, preEl) {
   catch (e) { const r = document.createRange(); r.selectNodeContents(preEl); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast("Tekst geselecteerd, kies Kopieer"); }
 }
 AFTER.data = () => {
+  $("#gsSave").onclick = () => {
+    const u = $("#gsUrl").value.trim();
+    if (!/^https:\/\/script\.google(usercontent)?\.com\/.+/.test(u)) return toast("Dit lijkt geen Web app URL van Google");
+    state.gsUrl = u; save(); syncSheet(true).then(() => go("data"));
+  };
+  const off = $("#gsOff"); if (off) off.onclick = () => { delete state.gsUrl; delete state.gsAt; save(); toast("Ontkoppeld"); go("data"); };
   $$("[data-bg]").forEach(b => b.onclick = () => { state.bg = b.dataset.bg; save(); buzz(); go("data"); });
   $("#exWho").value = exp.which; $("#exSep").value = exp.sep; $("#exMd").value = exp.md;
   $("#exWho").onchange = (e) => { exp.which = e.target.value; go("data"); };
@@ -2033,7 +2081,7 @@ document.addEventListener("click", (e) => {
   const d = e.target.closest("[data-del]");
   if (d) {
     const row = d.parentElement;
-    if (d.dataset.armed) { P().sessions = P().sessions.filter(s => s.id !== d.dataset.del); save(); toast("Verwijderd"); render(); }
+    if (d.dataset.armed) { P().sessions = P().sessions.filter(s => s.id !== d.dataset.del); if (state.gsUrl) (state.gsRemoved = state.gsRemoved || []).push(d.dataset.del); save(); syncSoon(); toast("Verwijderd"); render(); }
     else { d.dataset.armed = "1"; d.textContent = "?"; d.style.color = "var(--danger)"; d.style.borderColor = "var(--danger)"; d.setAttribute("aria-label", "Tik nogmaals om te verwijderen"); toast("Tik nogmaals om te verwijderen"); }
   }
 });
@@ -2045,7 +2093,8 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v22";
+  const APP_VERSION = "cabana-v23";
+  setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
     fetch("sw.js", { cache: "no-store" }).then(r => r.text()).then(t => { const m = t.match(/cabana-v\d+/); if (m && m[0] !== APP_VERSION) location.reload(); }).catch(() => {});
