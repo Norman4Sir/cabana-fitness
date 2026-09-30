@@ -402,6 +402,41 @@ fieldset { border-color: var(--glass-edge); background: rgb(255 255 255 / .06); 
 .setbox[open] summary > span::after { content: "Tik om in te klappen"; }
 .setbox summary .muted { font-weight: 500; }
 .setbox .settings-grid { margin-top: 10px; }
+/* Voortgang: grafiek, hero-getal, overzicht per dag */
+.phero { display: flex; flex-direction: column; gap: 2px; }
+.phero b { font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.phero b.up::before { content: "▲"; font-size: 22px; vertical-align: 12px; margin-right: 6px; color: var(--me); }
+.phero span { font-size: 14px; color: var(--muted); }
+.pchart { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.pchart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.pc-grid { stroke: var(--line); stroke-width: 1; }
+.pc-ax { font-size: 10.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.pc-area { opacity: 0; animation: pcFade .9s .5s ease-out forwards; }
+.pc-line { fill: none; stroke: var(--me); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: pcDraw 1.4s cubic-bezier(.5, 0, .2, 1) forwards; filter: drop-shadow(0 3px 5px color-mix(in srgb, var(--me) 45%, transparent)); }
+.pc-dot { fill: var(--surface); stroke: var(--me); stroke-width: 2.5; opacity: 0; animation: pcPop .35s var(--d) ease-out forwards; }
+.pc-rec { fill: #eda100; stroke: var(--surface); stroke-width: 1.5; stroke-linejoin: round; opacity: 0; transform-box: fill-box; transform-origin: center; animation: pcStar .6s var(--d) cubic-bezier(.3, 1.6, .5, 1) forwards; }
+.pc-halo { fill: var(--me); opacity: .25; transform-box: fill-box; transform-origin: center; animation: pcPulse 2.2s 1.8s ease-out infinite; }
+.pc-cross { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.pc-key { color: #eda100; }
+.pc-tip { position: absolute; pointer-events: none; display: flex; flex-direction: column; gap: 1px; padding: 8px 10px; border-radius: 12px; font-size: 12px; max-width: 220px; background: color-mix(in srgb, var(--surface) 92%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); border: 1px solid var(--glass-edge, var(--line)); box-shadow: 0 8px 20px -10px rgb(20 30 50 / .45); }
+.pc-tip b { font-size: 16px; font-variant-numeric: tabular-nums; }
+.pc-tip span { color: var(--muted); }
+@keyframes pcDraw { to { stroke-dashoffset: 0; } }
+@keyframes pcFade { to { opacity: 1; } }
+@keyframes pcPop { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pcStar { from { opacity: 0; transform: scale(.2) rotate(-60deg); } to { opacity: 1; transform: scale(1) rotate(0); } }
+@keyframes pcPulse { 0% { transform: scale(.6); opacity: .35; } 100% { transform: scale(2.2); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .pc-area, .pc-line, .pc-dot, .pc-rec { animation: none; opacity: 1; stroke-dashoffset: 0; } .pc-halo { animation: none; } }
+.pdays { display: flex; flex-direction: column; gap: 14px; }
+.pday h4 { margin: 0 0 4px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.pday h4::first-letter { text-transform: uppercase; }
+.prow { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 14px; font-variant-numeric: tabular-nums; }
+.prow b { text-align: right; white-space: nowrap; }
+.pbadge { display: inline-block; margin-left: 4px; padding: 1px 7px; border-radius: 99px; font-size: 11px; font-weight: 700; background: #fff1cc; color: #7a5200; }
+.pmini { flex-direction: row; align-items: center; justify-content: space-between; text-align: left; color: inherit; font: inherit; cursor: pointer; }
+.pmini .pm-t { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pmini .pm-t b { font-size: 17px; }
+.pmini svg { width: 120px; height: 40px; flex: none; }
 .tipsbox summary { font-size: 14px; font-weight: 700; cursor: pointer; color: var(--me); }
 /* ---------- Fase 3: toestel-foto's, lightbox, 5e tegel en trainingsschema's ---------- */
 .tile.wide { grid-column: 1 / -1; min-height: 200px; padding: 16px 18px 18px; }
@@ -821,6 +856,7 @@ VIEWS.home = () => {
     ${tile("goals", "Lenigheid & Doelen", "Spierrek · dead hang · pull-ups")}
     ${progTile()}
   </section>
+  ${progCard()}
   ${healthCard()}
   <section class="card">
     <p class="eyebrow">Laatst gelogd</p>
@@ -1407,6 +1443,216 @@ function zip(files) {
   return new Blob([...parts, ...central, e], { type: "application/zip" });
 }
 
+/* ---------- Voortgang: grafiek per oefening, overzicht per dag en Excel-bestand ---------- */
+const e1rm = (s) => (s.weight_kg && s.reps) ? s.weight_kg * (1 + Math.min(s.reps, 30) / 30) : "";
+const sum = (...a) => a.reduce((x, y) => x + y, 0);
+const PMETRICS = {
+  kg: { label: "Gewicht", unit: " kg", of: s => +s.weight_kg || 0, agg: Math.max, hint: "zwaarste gewicht van de dag" },
+  rm: { label: "Kracht", unit: " kg", of: s => +e1rm(s) || 0, agg: Math.max, hint: "geschat maximum voor 1 herhaling (gewicht en herhalingen samen)" },
+  vol: { label: "Volume", unit: " kg", of: s => +vol(s) || 0, agg: sum, hint: "sets × herhalingen × gewicht, per dag opgeteld" },
+  reps: { label: "Herhalingen", unit: "", of: s => (+s.sets || 1) * (+s.reps || 0), agg: sum, hint: "alle herhalingen van de dag" },
+};
+let progPick = { ex: "", m: "kg", all: false };
+const strengthOf = (p = state.profile) => sessionsOf(p).filter(s => isStrength(s) && (s.reps || s.weight_kg));
+function progExercises(list) {
+  const c = {}; list.forEach(s => { c[s.exercise] = (c[s.exercise] || 0) + 1; });
+  return Object.keys(c).sort((a, b) => c[b] - c[a] || a.localeCompare(b));
+}
+function progSeries(list, ex, m) {
+  const M = PMETRICS[m], days = {};
+  list.filter(s => s.exercise === ex).forEach(s => { const d = localDay(s.ts); (days[d] = days[d] || []).push(s); });
+  return Object.keys(days).sort().map(day => ({ day, v: r2(M.agg(...days[day].map(M.of))), ss: days[day] })).filter(p => p.v > 0);
+}
+const shortDay = (day) => new Date(day + "T12:00").toLocaleDateString("nl-NL", { day: "numeric", month: "short" });
+/* Records: elke dag waarop het beste van die oefening omhoog ging (tot dan toe) */
+function recordIds(list) {
+  const best = {}, ids = new Set();
+  list.forEach(s => { const w = +s.weight_kg || 0; if (!w) return; if (best[s.exercise] != null && w > best[s.exercise]) ids.add(s.id); best[s.exercise] = Math.max(best[s.exercise] ?? 0, w); });
+  return ids;
+}
+
+function progChart(pts, unit) {
+  const W = 340, H = 210, L = 38, R = 14, T = 22, B = 28;
+  const vals = pts.map(p => p.v), lo0 = Math.min(...vals), hi0 = Math.max(...vals);
+  const span = hi0 - lo0 || Math.max(hi0 * .2, 1);
+  const step = [1, 2, 2.5, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 5000].find(s => span / s <= 3) || 10000;
+  const lo = Math.max(0, Math.floor((lo0 - span * .25) / step) * step), hi = Math.ceil((hi0 + span * .15) / step) * step || step;
+  const t0 = new Date(pts[0].day).getTime(), t1 = new Date(pts[pts.length - 1].day).getTime();
+  const x = (p) => pts.length === 1 ? L + (W - L - R) / 2 : L + (new Date(p.day).getTime() - t0) / (t1 - t0) * (W - L - R);
+  const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const xy = pts.map(p => [x(p), y(p.v)]);
+  const line = xy.map((q, i) => (i ? "L" : "M") + q[0].toFixed(1) + " " + q[1].toFixed(1)).join(" ");
+  const area = pts.length > 1 ? `${line} L${xy[xy.length - 1][0].toFixed(1)} ${H - B} L${xy[0][0].toFixed(1)} ${H - B} Z` : "";
+  const grid = []; for (let v = lo; v <= hi + 1e-9; v += step) grid.push(v);
+  let best = -Infinity;
+  const dots = pts.map((p, i) => {
+    const rec = i > 0 && p.v > best; best = Math.max(best, p.v);
+    const [cx, cy] = xy[i], last = i === pts.length - 1;
+    return `${last ? `<circle class="pc-halo" cx="${cx}" cy="${cy}" r="9"/>` : ""}${rec
+      ? `<path class="pc-rec" style="--d:${(.9 + i / pts.length * .9).toFixed(2)}s" d="M${cx} ${cy - 8}l2.35 4.76 5.25.77-3.8 3.7.9 5.23L${cx} ${cy + 6.4}l-4.7 2.46.9-5.23-3.8-3.7 5.25-.77z"/>`
+      : `<circle class="pc-dot" style="--d:${(.9 + i / pts.length * .9).toFixed(2)}s" cx="${cx}" cy="${cy}" r="${last ? 5 : 4}"/>`}`;
+  }).join("");
+  return `<div class="pchart" id="pchart" data-pts='${esc(JSON.stringify(pts.map((p, i) => ({ x: xy[i][0], y: xy[i][1], d: p.day, v: p.v, s: p.ss.map(describe).join(" + ") }))))}' data-unit="${esc(unit)}">
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Verloop van ${pts[0].v} naar ${pts[pts.length - 1].v}${unit.trim()} over ${pts.length} trainingen">
+      <defs><linearGradient id="pcFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--me)" stop-opacity=".42"/><stop offset="1" stop-color="var(--me)" stop-opacity="0"/></linearGradient></defs>
+      ${grid.map(v => `<line class="pc-grid" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="pc-ax" x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${kg(v)}</text>`).join("")}
+      ${area ? `<path class="pc-area" d="${area}" fill="url(#pcFill)"/>` : ""}
+      ${pts.length > 1 ? `<path class="pc-line" d="${line}" pathLength="1"/>` : ""}
+      ${dots}
+      <text class="pc-ax" x="${L}" y="${H - 8}">${shortDay(pts[0].day)}</text>
+      ${pts.length > 1 ? `<text class="pc-ax" x="${W - R}" y="${H - 8}" text-anchor="end">${shortDay(pts[pts.length - 1].day)}</text>` : ""}
+      <line class="pc-cross" id="pcCross" x1="0" x2="0" y1="${T}" y2="${H - B}" visibility="hidden"/>
+    </svg>
+    <div class="pc-tip" id="pcTip" hidden></div>
+  </div>`;
+}
+
+VIEWS.progress = () => {
+  const list = strengthOf(), exs = progExercises(list);
+  const back = backBtn("home", "Dashboard");
+  if (!exs.length) return `${back}<div class="head"><h1>Voortgang</h1><p>Je grafieken verschijnen hier na je eerste krachttraining.</p></div>
+    <section class="card"><p class="empty">Log een oefening bij Fitness Toestellen of Vrije Gewichten, dan zie je hier je progressie per oefening en een overzicht per dag.</p></section>`;
+  if (!exs.includes(progPick.ex)) progPick.ex = exs[0];
+  const hasKg = list.some(s => s.exercise === progPick.ex && +s.weight_kg);
+  const mAllowed = hasKg ? ["kg", "rm", "vol", "reps"] : ["reps"];
+  if (!mAllowed.includes(progPick.m)) progPick.m = mAllowed[0];
+  const M = PMETRICS[progPick.m], pts = progSeries(list, progPick.ex, progPick.m);
+  const first = pts[0], last = pts[pts.length - 1], top = Math.max(...pts.map(p => p.v));
+  const d = r2(last.v - first.v), pct = first.v ? Math.round(d / first.v * 100) : 0;
+  const up = d > 0, weeks = Math.max(1, Math.round((new Date(last.day) - new Date(first.day)) / 6048e5));
+  const recs = recordIds(list);
+  const days = {}; [...list].reverse().forEach(s => { const k = localDay(s.ts); (days[k] = days[k] || []).push(s); });
+  const dayKeys = Object.keys(days), shown = progPick.all ? dayKeys : dayKeys.slice(0, 10);
+  return `${back}
+  <div class="head"><h1>Voortgang</h1><p>${PROFILES[state.profile]} · ${list.length} ${list.length === 1 ? "oefening" : "oefeningen"} gelogd op ${dayKeys.length} ${dayKeys.length === 1 ? "dag" : "dagen"}</p></div>
+  <section class="card pcard">
+    <label class="f">Oefening<select class="i" id="pEx">${exs.map(e => `<option${e === progPick.ex ? " selected" : ""}>${esc(e)}</option>`).join("")}</select></label>
+    <div class="chips" role="group" aria-label="Wat wil je zien">${mAllowed.map(k => `<button class="chip" data-pm="${k}" aria-pressed="${k === progPick.m}">${PMETRICS[k].label}</button>`).join("")}</div>
+    <div class="phero">
+      <b class="${up ? "up" : ""}">${pts.length < 2 ? kg(last.v) + M.unit : (up ? "+" : d < 0 ? "−" : "±") + kg(Math.abs(d)) + M.unit}</b>
+      <span>${pts.length < 2 ? `Eerste meting. Na je volgende training zie je hier je groei.` : `${up ? `${pct > 0 ? pct + "% sterker" : "Vooruit"}` : d < 0 ? "Iets lager dan je start" : "Gelijk aan je start"}: van ${kg(first.v)} naar ${kg(last.v)}${M.unit} in ${weeks} ${weeks === 1 ? "week" : "weken"}`}</span>
+    </div>
+    ${progChart(pts, M.unit)}
+    <p class="muted small" style="margin:0">${esc(M.label)}: ${esc(M.hint)}. <span class="pc-key">★</span> = nieuw record. Tik op de grafiek voor details.</p>
+    <div class="stats"><div><b>${kg(top)}</b><span>Record${M.unit}</span></div><div><b>${kg(last.v)}</b><span>Laatste${M.unit}</span></div><div><b>${pts.length}</b><span>${pts.length === 1 ? "Training" : "Trainingen"}</span></div></div>
+  </section>
+  <section class="card">
+    <p class="eyebrow">Excel</p>
+    <p class="muted small" style="margin:0">Alle krachttraining van ${PROFILES[state.profile]} in één bestand: een overzicht per dag en oefening met gewicht, en een blad Progressie met een grafiek van je zwaarste gewicht per oefening. Opent in Numbers en Excel.</p>
+    <button class="btn primary" id="xlsxDl">Download Excel-bestand</button>
+  </section>
+  <section class="card">
+    <p class="eyebrow">Per dag</p>
+    <div class="pdays">${shown.map(k => `<div class="pday"><h4>${esc(dayLabel(k))}</h4>${days[k].map(s => `<div class="prow"><span>${esc(s.exercise)}</span><b>${esc(describe(s))}${recs.has(s.id) ? ` <span class="pbadge">Record</span>` : ""}</b></div>`).join("")}</div>`).join("")}</div>
+    ${dayKeys.length > shown.length ? `<button class="btn ghost" id="pAll">Toon alle ${dayKeys.length} dagen</button>` : ""}
+  </section>`;
+};
+AFTER.progress = () => {
+  const ex = $("#pEx"); if (!ex) return;
+  ex.onchange = () => { progPick.ex = ex.value; render(); };
+  $$("[data-pm]").forEach(b => b.onclick = () => { progPick.m = b.dataset.pm; render(); });
+  const all = $("#pAll"); if (all) all.onclick = () => { progPick.all = true; render(); };
+  $("#xlsxDl").onclick = () => { download(`Cabana voortgang ${PROFILES[state.profile]} ${localDay(Date.now())}.xlsx`, toXlsx(state.profile), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); toast("Excel-bestand gemaakt"); };
+  const box = $("#pchart"), tip = $("#pcTip"), cross = $("#pcCross"), svg = box.querySelector("svg");
+  const pts = JSON.parse(box.dataset.pts), unit = box.dataset.unit;
+  const show = (e) => {
+    const r = svg.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * 340;
+    const p = pts.reduce((a, q) => Math.abs(q.x - sx) < Math.abs(a.x - sx) ? q : a);
+    cross.setAttribute("x1", p.x); cross.setAttribute("x2", p.x); cross.setAttribute("visibility", "visible");
+    tip.hidden = false; tip.innerHTML = `<b>${kg(p.v)}${esc(unit)}</b><span>${esc(dayLabel(p.d))}</span><span>${esc(p.s)}</span>`;
+    const px = p.x / 340 * r.width, w = tip.offsetWidth;
+    tip.style.left = Math.min(Math.max(px - w / 2, 0), r.width - w) + "px";
+    tip.style.top = Math.max(p.y / 210 * r.height - tip.offsetHeight - 14, 0) + "px";
+  };
+  const hide = () => { tip.hidden = true; cross.setAttribute("visibility", "hidden"); };
+  box.addEventListener("pointerdown", show); box.addEventListener("pointermove", show); box.addEventListener("pointerleave", hide);
+};
+
+/* Kleine voortgangskaart op het dashboard, met een mini-lijntje van je meest getrainde oefening */
+function progCard() {
+  const list = strengthOf(), exs = progExercises(list);
+  if (!exs.length) return "";
+  const ex = exs[0], pts = progSeries(list, ex, list.some(s => s.exercise === ex && +s.weight_kg) ? "kg" : "reps");
+  const vals = pts.map(p => p.v), lo = Math.min(...vals), hi = Math.max(...vals), n = pts.length;
+  const sp = n > 1 ? pts.map((p, i) => `${i ? "L" : "M"}${(4 + i / (n - 1) * 112).toFixed(1)} ${(36 - (hi > lo ? (p.v - lo) / (hi - lo) : .5) * 30).toFixed(1)}`).join(" ") : "";
+  const d = n > 1 ? r2(vals[n - 1] - vals[0]) : 0;
+  return `<button class="card pmini" data-go="progress">
+    <span class="pm-t"><span class="eyebrow">Voortgang</span><b>${esc(ex)}</b><span class="muted small">${n > 1 ? `${d > 0 ? "+" : d < 0 ? "−" : "±"}${kg(Math.abs(d))} sinds ${shortDay(pts[0].day)}` : "Tik voor je grafieken en Excel"}</span></span>
+    ${sp ? `<svg viewBox="0 0 120 40" aria-hidden="true"><path d="${sp}" fill="none" stroke="var(--me)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ""}
+  </button>`;
+}
+
+/* Excel (.xlsx) zonder bibliotheek: twee bladen en een lijngrafiek, ingepakt met de zip-schrijver hierboven */
+function toXlsx(p) {
+  const list = strengthOf(p), recs = recordIds(list), exs = progExercises(list);
+  const xe = (v) => String(v).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const serial = (day) => { const [y, m, d] = day.split("-").map(Number); return (Date.UTC(y, m - 1, d) - Date.UTC(1899, 11, 30)) / 864e5; };
+  const col = (i) => { let s = ""; i++; while (i) { const r = (i - 1) % 26; s = String.fromCharCode(65 + r) + s; i = Math.floor((i - 1) / 26); } return s; };
+  const cell = (r, c, v, st) => v === "" || v == null ? "" : typeof v === "number"
+    ? `<c r="${col(c)}${r}"${st ? ` s="${st}"` : ""}><v>${v}</v></c>`
+    : `<c r="${col(c)}${r}" t="inlineStr"${st ? ` s="${st}"` : ""}><is><t xml:space="preserve">${xe(v)}</t></is></c>`;
+  const row = (r, vals, styles = []) => `<row r="${r}">${vals.map((v, c) => cell(r, c, v, styles[c])).join("")}</row>`;
+  const sheet = (rows, widths, extra = "") => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${widths.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join("")}</cols><sheetData>${rows.join("")}</sheetData>${extra}</worksheet>`;
+  const num1 = (v) => v === "" || v == null ? "" : r2(+v);
+  /* Blad 1: overzicht per dag en oefening */
+  const H1 = ["Datum", "Oefening", "Onderdeel", "Sets", "Herhalingen", "Gewicht (kg)", "Volume (kg)", "Geschat max (kg)", "Record"];
+  const r1 = [row(1, H1, H1.map(() => 2))].concat(list.map((s, i) => row(i + 2,
+    [serial(localDay(s.ts)), s.exercise, MODULES[s.module] || s.module, num1(s.sets), num1(s.reps), num1(s.weight_kg), num1(vol(s)), num1(e1rm(s)) === "" ? "" : Math.round(e1rm(s) * 10) / 10, recs.has(s.id) ? "ja" : ""],
+    [1, 0, 0, 0, 0, 3, 3, 3, 0])));
+  const s1 = sheet(r1, [12, 30, 20, 7, 12, 13, 13, 16, 8], list.length ? `<autoFilter ref="A1:I${list.length + 1}"/>` : "");
+  /* Blad 2: zwaarste gewicht per dag, een kolom per oefening */
+  const wEx = exs.filter(e => list.some(s => s.exercise === e && +s.weight_kg));
+  const dayKeys = [...new Set(list.map(s => localDay(s.ts)))].sort();
+  const best = {}; list.forEach(s => { const k = localDay(s.ts) + "|" + s.exercise, w = +s.weight_kg || 0; if (w) best[k] = Math.max(best[k] || 0, w); });
+  const r2rows = [row(1, ["Datum", ...wEx], [2, ...wEx.map(() => 2)])].concat(dayKeys.map((k, i) => row(i + 2, [serial(k), ...wEx.map(e => best[k + "|" + e] ?? "")], [1, ...wEx.map(() => 3)])));
+  const chartEx = wEx.slice(0, 6), n = dayKeys.length + 1, hasChart = chartEx.length > 0 && dayKeys.length > 0;
+  const s2 = sheet(r2rows, [12, ...wEx.map(e => Math.min(Math.max(e.length + 2, 12), 28))], hasChart ? `<drawing r:id="rId1"/>` : "");
+  const COLORS = ["2A78D6", "EB6834", "1BAF7A", "EDA100", "E87BA4", "008300"];
+  const ser = chartEx.map((e, i) => `<c:ser><c:idx val="${i}"/><c:order val="${i}"/><c:tx><c:strRef><c:f>Progressie!$${col(i + 1)}$1</c:f></c:strRef></c:tx>
+<c:spPr><a:ln w="28575" cap="rnd"><a:solidFill><a:srgbClr val="${COLORS[i]}"/></a:solidFill><a:round/></a:ln></c:spPr>
+<c:marker><c:symbol val="circle"/><c:size val="7"/><c:spPr><a:solidFill><a:srgbClr val="${COLORS[i]}"/></a:solidFill><a:ln w="12700"><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill></a:ln></c:spPr></c:marker>
+<c:cat><c:numRef><c:f>Progressie!$A$2:$A$${n}</c:f></c:numRef></c:cat><c:val><c:numRef><c:f>Progressie!$${col(i + 1)}$2:$${col(i + 1)}$${n}</c:f></c:numRef></c:val><c:smooth val="0"/></c:ser>`).join("");
+  const txt = (t, sz, b) => `<c:tx><c:rich><a:bodyPr/><a:p><a:pPr><a:defRPr sz="${sz}" b="${b ? 1 : 0}"/></a:pPr><a:r><a:rPr lang="nl-NL" sz="${sz}" b="${b ? 1 : 0}"/><a:t>${xe(t)}</a:t></a:r></a:p></c:rich></c:tx>`;
+  const chart = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><c:roundedCorners val="0"/>
+<c:chart><c:title>${txt(`Progressie ${PROFILES[p]}: zwaarste gewicht per dag`, 1400, true)}<c:overlay val="0"/></c:title><c:autoTitleDeleted val="0"/>
+<c:plotArea><c:layout/><c:lineChart><c:grouping val="standard"/><c:varyColors val="0"/>${ser}<c:marker val="1"/><c:axId val="5001"/><c:axId val="5002"/></c:lineChart>
+<c:dateAx><c:axId val="5001"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:numFmt formatCode="d mmm" sourceLinked="0"/><c:majorTickMark val="out"/><c:minorTickMark val="none"/><c:tickLblPos val="low"/><c:spPr><a:ln w="9525"><a:solidFill><a:srgbClr val="BFBFBF"/></a:solidFill></a:ln></c:spPr><c:crossAx val="5002"/><c:crosses val="autoZero"/><c:auto val="1"/><c:lblOffset val="100"/><c:baseTimeUnit val="days"/></c:dateAx>
+<c:valAx><c:axId val="5002"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:majorGridlines><c:spPr><a:ln w="6350"><a:solidFill><a:srgbClr val="E3E3E3"/></a:solidFill></a:ln></c:spPr></c:majorGridlines><c:title>${txt("kg", 1000, false)}<c:overlay val="0"/></c:title><c:numFmt formatCode="General" sourceLinked="1"/><c:majorTickMark val="none"/><c:minorTickMark val="none"/><c:tickLblPos val="nextTo"/><c:spPr><a:ln><a:noFill/></a:ln></c:spPr><c:crossAx val="5001"/><c:crosses val="autoZero"/><c:crossBetween val="between"/></c:valAx>
+</c:plotArea><c:legend><c:legendPos val="b"/><c:overlay val="0"/></c:legend><c:plotVisOnly val="1"/><c:dispBlanksAs val="span"/></c:chart></c:chartSpace>`;
+  const toCol = wEx.length + 2;
+  const drawing = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"><xdr:twoCellAnchor><xdr:from><xdr:col>${toCol}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>1</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:from><xdr:to><xdr:col>${toCol + 10}</xdr:col><xdr:colOff>0</xdr:colOff><xdr:row>24</xdr:row><xdr:rowOff>0</xdr:rowOff></xdr:to>
+<xdr:graphicFrame macro=""><xdr:nvGraphicFramePr><xdr:cNvPr id="2" name="Progressie"/><xdr:cNvGraphicFramePr/></xdr:nvGraphicFramePr><xdr:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/></xdr:xfrm><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:id="rId1"/></a:graphicData></a:graphic></xdr:graphicFrame><xdr:clientData/></xdr:twoCellAnchor></xdr:wsDr>`;
+  const rel = (id, type, target) => `<Relationship Id="${id}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/${type}" Target="${target}"/>`;
+  const rels = (...r) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${r.join("")}</Relationships>`;
+  const styles = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="2"><numFmt numFmtId="164" formatCode="d-m-yyyy"/><numFmt numFmtId="165" formatCode="0.##"/></numFmts>
+<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>
+<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FF1B8A9A"/><bgColor indexed="64"/></patternFill></fill></fills>
+<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="4"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="164" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/><xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/><xf numFmtId="165" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/></cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+  const files = [
+    { name: "[Content_Types].xml", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${hasChart ? `<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/><Override PartName="/xl/charts/chart1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawingml.chart+xml"/>` : ""}</Types>` },
+    { name: "_rels/.rels", text: rels(rel("rId1", "officeDocument", "xl/workbook.xml")) },
+    { name: "xl/workbook.xml", text: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Overzicht" sheetId="1" r:id="rId1"/><sheet name="Progressie" sheetId="2" r:id="rId2"/></sheets>${list.length ? `<definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">Overzicht!$A$1:$I$${list.length + 1}</definedName></definedNames>` : ""}</workbook>` },
+    { name: "xl/_rels/workbook.xml.rels", text: rels(rel("rId1", "worksheet", "worksheets/sheet1.xml"), rel("rId2", "worksheet", "worksheets/sheet2.xml"), rel("rId3", "styles", "styles.xml")) },
+    { name: "xl/styles.xml", text: styles },
+    { name: "xl/worksheets/sheet1.xml", text: s1 },
+    { name: "xl/worksheets/sheet2.xml", text: s2 },
+  ];
+  if (hasChart) files.push(
+    { name: "xl/worksheets/_rels/sheet2.xml.rels", text: rels(rel("rId1", "drawing", "../drawings/drawing1.xml")) },
+    { name: "xl/drawings/drawing1.xml", text: drawing },
+    { name: "xl/drawings/_rels/drawing1.xml.rels", text: rels(rel("rId1", "chart", "../charts/chart1.xml")) },
+    { name: "xl/charts/chart1.xml", text: chart });
+  return zip(files);
+}
+
 /* ---------- Apple Gezondheid via de app Opdrachten ----------
    Een website kan niet zelf in HealthKit schrijven. De app geeft de training als JSON door aan de
    opdracht "Cabana naar Gezondheid", die met de actie "Registreer training" een workout vastlegt. */
@@ -1524,6 +1770,7 @@ VIEWS.data = () => {
     <p class="eyebrow">Progressie-sheet (CSV)</p>
     <label class="f">Formaat<select class="i" id="exSep"><option value=",">Komma (Numbers, Obsidian, AI)</option><option value=";">Puntkomma (Excel NL)</option></select></label>
     <div class="row"><button class="btn primary" id="exDl">Download CSV</button><button class="btn ghost" id="exCopy">Kopieer CSV</button></div>
+    <button class="btn ghost" data-go="progress">Voortgang met grafiek en Excel-bestand</button>
     <pre class="csv" id="csvPrev">${esc(toCSV(exp.which, exp.sep))}</pre>
   </section>
   <section class="card">
@@ -1798,7 +2045,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v21";
+  const APP_VERSION = "cabana-v22";
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
     fetch("sw.js", { cache: "no-store" }).then(r => r.text()).then(t => { const m = t.match(/cabana-v\d+/); if (m && m[0] !== APP_VERSION) location.reload(); }).catch(() => {});
