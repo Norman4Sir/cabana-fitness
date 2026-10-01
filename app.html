@@ -603,7 +603,36 @@ const KEY = "cabana.v1";
 const PROFILES = { patrick: "Patrick", paula: "Paula" };
 const MODULES = { cardio: "Cardio Cabana", machine: "Fitness Toestellen", free: "Vrije Gewichten", goals: "Lenigheid & Doelen" };
 
-const DEFAULT_CARDIO = ["Loopband", "Crosstrainer", "Hometrainer", "Roeier", "ClimbMill", "Ligfiets"];
+const DEFAULT_CARDIO = ["Loopband", "Crosstrainer", "Hometrainer", "Roeier", "ClimbMill", "Ligfiets"]; // oude lijst (v2), voor migratie
+/* Cardiotoestellen van Cabana (foto's van Norman, 1 okt 2026). De naam blijft de sleutel van je eerdere sessies. */
+const CARDIO_CATALOG = [
+  { key: "c-treadmill", name: "Loopband", nl: "Matrix-loopband met touchscreen", img: "cardio-treadmill",
+    tips: ["Het scherm toont woorden (TIME, MILES, CALORIES, MPH, % INCLINE): Kopieer alles werkt hier het best.", "Mijlen en mph worden omgerekend naar km en km/u, de helling gaat in de notitie.", "Tip: lees af op het eindscherm, dan staat de totale tijd er en niet een rondetijd."] },
+  { key: "c-elliptical", name: "Crosstrainer", nl: "Matrix-crosstrainer met LED-console (Sprint 8)", img: "cardio-elliptical",
+    tips: ["Dit scherm toont icoontjes in plaats van woorden; Cabana zet de getallen op volgorde om.", "Controleer na het plakken tijd, kcal en niveau."] },
+  { key: "c-elliptical-led", name: "Crosstrainer klassiek", nl: "Oudere Matrix-crosstrainer met puntjesscherm", img: "cardio-elliptical-led",
+    tips: ["Op het eindscherm (END) staan drie getallen: tijd, dan het vak dat je kiest (kcal, RPM, watt of hartslag) en dan snelheid, afstand of niveau.", "Druk op de knopjes onder het scherm om te wisselen en vul wat je ziet zelf aan."] },
+  { key: "c-upright", name: "Hometrainer", nl: "Matrix-fiets met touchscreen", img: "cardio-upright",
+    tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
+  { key: "c-hybrid", name: "Hybride fiets", nl: "Matrix-fiets met hoge handgrepen", img: "cardio-hybrid",
+    tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
+  { key: "c-recumbent", name: "Ligfiets", nl: "Matrix-ligfiets met touchscreen", img: "cardio-recumbent",
+    tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
+  { key: "c-nike", name: "Hometrainer Nike+", nl: "Matrix-fiets met Nike + iPod-scherm", img: "cardio-nike",
+    tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
+  { key: "c-spin", name: "Spinbike", nl: "Matrix CXP-spinfiets", img: "cardio-spin",
+    tips: ["Het kleine scherm toont tijd, kcal, watt en RPM; plak of typ wat je ziet.", "Watt of RPM die niet in een veld passen, komen in de notitie."] },
+  { key: "c-rower", name: "Roeier", nl: "Matrix-roeitoestel", img: "cardio-rower",
+    tips: ["Plak het eindscherm; tijd, afstand en kcal worden ingevuld.", "Afstand op een roeier staat in meters: vul het in km in (2000 m = 2)."] },
+  { key: "c-climbmill", name: "ClimbMill", nl: "Matrix-traploper (stepper)", img: "",
+    tips: ["Volgorde van de getallen: niveau, tijd, hartslag, kcal, verdiepingen, stappen per minuut, stappen."] },
+  { key: "c-climber", name: "Klimtoestel", nl: "Verticale klimmer", img: "cardio-climber",
+    tips: ["Vul tijd en wat het schermpje toont zelf in, of plak het met Live Text."] },
+  { key: "c-sdrive", name: "S-Drive", nl: "Matrix S-Drive sleetrainer (duwen en trekken)", img: "cardio-sdrive",
+    tips: ["Noteer tijd en afstand of het aantal sprints; de weerstand (1 tot 10) kun je kwijt bij niveau.", "Voor trekken met de harnas: zet het in de notitie."] }
+];
+const cdefOf = (it) => CARDIO_CATALOG.find(c => c.key === it.key) || { name: it.name, nl: "Eigen toestel", img: "", tips: [] };
+const catalogCardio = () => CARDIO_CATALOG.map(c => ({ id: uid(), key: c.key, name: c.name, comment: "" }));
 const DEFAULT_MACHINES = ["Leg Press", "Chest Press", "Lat Pulldown", "Seated Row", "Shoulder Press", "Leg Extension", "Leg Curl", "Abdominal Crunch"]; // oude lijst (v1), voor migratie
 
 /* Gewichtsstapels zoals op de Matrix-plaatjes (lbs-stapels met kg-label). */
@@ -644,7 +673,18 @@ const CATALOG = [
     tips: ["Zithoogte zo dat je bovenrug tegen de bovenste rugpad rust.", "Grepen boven je schouders, rol je romp naar voren en terug."] },
   { key: "cable", name: "Kabelstation", nl: "Matrix multi-station met oefenkaart", img: "IMG_0487", stack: "small", fields: ["Kabelhoogte", "Hulpstuk"],
     exercises: ["Chest Press", "Chest Fly", "Incline Press", "Decline Press", "High Row", "Low Row", "Row / Rear Delt", "Deltoid Fly", "Front Raise", "Shoulder Press", "Triceps Pressdown", "Overhead Extension", "Ab Crunch", "Low Twist", "Rock Climb", "Hip Flexor", "Hip Abduction", "Hip Adduction"],
-    tips: ["Kies de oefening op de kaart en zet de kabel op de juiste hoogte.", "Hulpstukken: touw (triceps), losse handgrepen of gebogen stang."] }
+    tips: ["Kies de oefening op de kaart en zet de kabel op de juiste hoogte.", "Hulpstukken: touw (triceps), losse handgrepen of gebogen stang."] },
+  /* Tweede reeks foto's (1 okt 2026) */
+  { key: "shoulderpress", name: "Converging Shoulder Press", nl: "Schouderpers", img: "str-shoulderpress", stack: "small", fields: ["Zithoogte"],
+    tips: ["Zithoogte zo dat je handen net boven je schouders zitten.", "Rug recht, schouders tegen de pad.", "Pak de grepen en duw ze boven je hoofd tot bijna gestrekt (ellebogen niet op slot), rustig terug."] },
+  { key: "dipchin", name: "Dip / Chin Assist", nl: "Hulp bij dippen en optrekken", img: "str-dipchin", stack: "small", fields: ["Handgreep"], exercises: ["Dip Assist", "Chin Assist"], assist: true,
+    tips: ["Let op: het gewicht helpt je. Meer gewicht is lichter, minder gewicht is zwaarder.", "Stap op de voetsteunen, kies je handgrepen en zet één voor één je knieën op de pad.", "Dip: zak rustig en duw terug omhoog. Chin: trek jezelf op en zak rustig terug."] },
+  { key: "hyperext", name: "Hyperextension", nl: "Rugstrekbank (45°)", img: "str-hyperext", stack: "fine", body: true, fields: ["Heuppad (gaatje)"],
+    tips: ["Zet de heuppads zo dat je heupen er net overheen kunnen buigen.", "Hielen onder de rollen, armen gekruist voor je borst (of een gewicht vasthouden).", "Buig rustig voorover en kom terug tot je lichaam een rechte lijn is, niet verder."] },
+  { key: "sissy", name: "Sissy Squat", nl: "Kniebank met kuitrollen", img: "str-sissy", stack: "fine", body: true, fields: ["Kuitrollen (gaatje)"],
+    tips: ["Voeten op de plaat, kuiten tegen de rollen, schenen tegen de kniepad.", "Leun met rechte romp achterover en zak door je knieën.", "Duw jezelf terug omhoog met je bovenbenen."] },
+  { key: "abbench", name: "Buikbank", nl: "Schuine sit-up-bank", img: "str-abbench", stack: "fine", body: true, fields: ["Stand voetsteun"], exercises: ["Sit-up", "V-sit hold", "Leg raise"],
+    tips: ["Haak je voeten onder de voetsteun, hoe hoger de stand hoe zwaarder.", "Sit-up: rol rustig op en weer terug, niet aan je nek trekken.", "V-sit hold: leun achterover met gestrekte armen en houd vast; noteer de seconden in de notitie."] }
 ];
 const CUSTOM_FIELDS = ["Zithoogte", "Rugleuning", "Overige instelling"];
 const defOf = (it) => CATALOG.find(c => c.key === it.key) || { name: it.name, nl: "Eigen toestel", stack: "fine", fields: CUSTOM_FIELDS, tips: [] };
@@ -660,7 +700,7 @@ const STRETCHES = ["Hamstrings", "Heupflexoren", "Schouders", "Borst", "Kuiten",
 
 function blankProfile() {
   const mk = (names) => names.map(n => ({ id: uid(), name: n, seat: "", back: "", extra: "", comment: "" }));
-  return { sessions: [], cardio: mk(DEFAULT_CARDIO), machines: catalogMachines(), free: mk(DEFAULT_FREE), pullupStep: "A", pullupDone: [], health: {} };
+  return { sessions: [], cardio: catalogCardio(), machines: catalogMachines(), free: mk(DEFAULT_FREE), pullupStep: "A", pullupDone: [], health: {} };
 }
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
@@ -668,21 +708,33 @@ let state;
 function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
-  if (!s || !s.data) s = { profile: "patrick", data: {} };
+  if (!s || !s.data) s = { profile: "patrick", data: {}, v: 3 };
   for (const p in PROFILES) if (!s.data[p]) s.data[p] = blankProfile();
   if (!PROFILES[s.profile]) s.profile = "patrick";
   return migrate(s);
 }
 /* v1 → v2: generieke toestellen vervangen door de echte Cabana-toestellen; eigen toestellen blijven. */
 function migrate(s) {
-  if (s.v >= 2) return s;
-  for (const p in s.data) {
+  if (s.v >= 3) return s;
+  if (s.v < 2 || !s.v) for (const p in s.data) {
     const d = s.data[p];
     const own = (d.machines || []).filter(m => !m.key && !DEFAULT_MACHINES.includes(m.name))
       .map(m => ({ id: m.id, name: m.name, stack: "fine", comment: m.comment || "", settings: { "Zithoogte": m.seat || "", "Rugleuning": m.back || "", "Overige instelling": m.extra || "" } }));
     d.machines = catalogMachines().concat(own);
   }
-  s.v = 2;
+  /* v2 → v3: cardiotoestellen krijgen een foto; nieuwe cardio- en krachttoestellen erbij. Bestaande namen blijven, dus je geschiedenis ook. */
+  for (const p in s.data) {
+    const d = s.data[p];
+    d.cardio = d.cardio || [];
+    d.cardio.forEach(it => { if (!it.key) { const c = CARDIO_CATALOG.find(c => c.name === it.name); if (c && !d.cardio.some(x => x.key === c.key)) it.key = c.key; } });
+    const own = d.cardio.filter(x => !x.key);
+    d.cardio = CARDIO_CATALOG.map(c => d.cardio.find(x => x.key === c.key) || { id: uid(), key: c.key, name: c.name, comment: "" }).concat(own);
+    d.machines = d.machines || [];
+    const mk = new Set(d.machines.map(m => m.key).filter(Boolean));
+    const ownM = d.machines.filter(m => !m.key);
+    d.machines = d.machines.filter(m => m.key).concat(CATALOG.filter(c => !mk.has(c.key)).map(c => ({ id: uid(), key: c.key, name: c.name, settings: {}, comment: "" })), ownM);
+  }
+  s.v = 3;
   return s;
 }
 function save() {
@@ -867,7 +919,7 @@ function listView(module, key, title, sub) {
   <section class="list">
     ${items.map(it => {
       const last = module === "machine" ? machineSessions(it)[0] : sessionsFor(module, it.name)[0];
-      const d = module === "machine" ? defOf(it) : null;
+      const d = module === "machine" ? defOf(it) : module === "cardio" ? cdefOf(it) : null;
       const img = d && d.img ? `<img class="thumb" src="img/${d.img}.jpg" alt="" loading="lazy">` : "";
       return `<button class="item${img ? " has-img" : ""}" data-open="${it.id}">${img}<b>${esc(it.name)}</b>${d ? `<span class="nl">${esc(d.nl)}</span>` : ""}<span>${last ? esc(describe(last)) : "Nog geen sessie"}</span></button>`;
     }).join("")}
@@ -887,7 +939,7 @@ function listAfter(key, view) {
   };
   $$("[data-open]").forEach(b => b.onclick = () => go(view, { id: b.dataset.open }));
 }
-VIEWS.cardio = () => listView("cardio", "cardio", "Cardio Cabana", "Kies het Matrix-toestel. Maak een foto van het eindscherm en vul je Apple Watch-data aan.");
+VIEWS.cardio = () => listView("cardio", "cardio", "Cardio Cabana", "Kies het toestel. Kopieer het eindscherm met Live Text en vul je Apple Watch-data aan.");
 AFTER.cardio = () => listAfter("cardio", "cardioLog");
 VIEWS.machine = () => listView("machine", "machines", "Fitness Toestellen", "Je instellingen en laatste gewicht staan per toestel klaar.");
 AFTER.machine = () => listAfter("machines", "strength");
@@ -899,8 +951,14 @@ let pendingPhoto = null;
 VIEWS.cardioLog = () => {
   const it = P().cardio.find(x => x.id === route.id); if (!it) return VIEWS.cardio();
   const hist = sessionsFor("cardio", it.name).slice(0, 5);
+  const cd = cdefOf(it);
   return `${backBtn("cardio", "Cardio Cabana")}
-  <div class="head"><h1>${esc(it.name)}</h1><p>Matrix-scherm + Apple Watch</p></div>
+  <div class="head"><h1>${esc(it.name)}</h1><p>${esc(cd.nl && cd.nl !== "Eigen toestel" ? cd.nl : "Matrix-scherm + Apple Watch")}</p></div>
+  ${cd.img ? `<section class="card hero">
+    <button class="hero-img" data-zoom="${cd.key}" aria-label="Foto ${esc(it.name)} groot bekijken"><img src="img/${cd.img}.jpg" alt="${esc(it.name)}">
+      <span class="glasspill zoomtag" aria-hidden="true">⤢ Groot</span></button>
+    ${cd.tips.length ? `<div class="hero-body"><details class="tipsbox"><summary>Zo lees je het scherm</summary><ol>${cd.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ol></details></div>` : ""}
+  </section>` : cd.tips.length ? `<section class="card"><details class="tipsbox"><summary>Zo lees je het scherm</summary><ol>${cd.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ol></details></section>` : ""}
   <section class="card">
     <div class="row" style="align-items:center"><h3 style="flex:1 1 auto">Foto van het scherm</h3></div>
     <div class="photo" id="photoBox">
@@ -926,7 +984,7 @@ VIEWS.cardioLog = () => {
       <label class="f">Kcal (toestel)<input class="i" id="c_kcal" inputmode="numeric" placeholder="280"></label>
       <label class="f">Niveau / snelheid<input class="i" id="c_lvl" inputmode="decimal" placeholder="8"></label>
     </div>
-    <div class="row" id="c_stepRow"${/climb|step/i.test(it.name) ? "" : " hidden"}>
+    <div class="row" id="c_stepRow"${it.key === "c-climbmill" || /climb|step/i.test(it.name) ? "" : " hidden"}>
       <label class="f">Verdiepingen<input class="i" id="c_floors" inputmode="numeric" placeholder="30"></label>
       <label class="f">Stappen/min<input class="i" id="c_spm" inputmode="numeric" placeholder="100"></label>
       <label class="f">Stappen<input class="i" id="c_steps" inputmode="numeric" placeholder="2600"></label>
@@ -1044,8 +1102,12 @@ function machineSessions(it, sub) {
   return P().sessions.filter(s => s.module === "machine" && (s.machine === it.name || s.exercise === it.name) && (!sub || s.sub === sub))
     .sort((a, b) => b.ts.localeCompare(a.ts));
 }
-function suggest(last, values) {
-  if (!last) return { sets: 3, reps: 10, weight: values ? values[1] : 20, note: "" };
+function suggest(last, values, d) {
+  if (!last) return { sets: 3, reps: 10, weight: d && d.assist && values ? values[Math.min(8, values.length - 1)] : d && d.body ? 0 : values ? values[1] : 20, note: d && d.assist ? "Begin met veel hulpgewicht; elke keer iets minder is vooruitgang." : "" };
+  if (d && d.assist && last.reps >= 15 && values) {
+    const w = last.weight_kg || 0, i = nearestIdx(values, w), nw = values[Math.max(i - 1, 0)];
+    return { sets: last.sets, reps: 8, weight: nw, note: `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>één plaatje minder hulp (${kg(nw)} kg)</b> en terug naar 8 herhalingen.` };
+  }
   const w = last.weight_kg || 0;
   const s = { sets: last.sets, reps: last.reps, weight: w, note: "" };
   // Dubbele progressie: haal je de bovenkant van het rep-bereik (15), dan zwaarder en terug naar 8.
@@ -1064,7 +1126,7 @@ VIEWS.strength = () => {
   const sub = subs ? (subPick[it.id] && subs.includes(subPick[it.id]) ? subPick[it.id] : subs[0]) : "";
   const hist = isMachine ? machineSessions(it, sub) : sessionsFor(module, it.name);
   const values = isMachine ? STACKS[stackOf(it)].values : null;
-  let sg = suggest(hist[0], values);
+  let sg = suggest(hist[0], values, d);
   if (route.preset) {
     const pz = route.preset, w = pz.weight != null ? pz.weight : sg.weight;
     sg = { sets: pz.sets, reps: pz.reps, weight: w, note: `Uit je schema <b>${esc(route.prog.label)}</b>: ${pz.sets} × ${pz.reps} @ ${kg(w)} kg.${pz.weight == null ? " Eerste keer: controleer het gewicht." : ""}` };
@@ -1867,16 +1929,17 @@ AFTER.data = () => {
 /* ---------- Toestel-foto's: groot bekijken met stappen en je eigen instellingen ---------- */
 const setPills = (it) => Object.entries((it && it.settings) || {}).filter(([, v]) => v).map(([k, v]) => `<span class="glasspill">${esc(k)} ${esc(v)}</span>`).join("");
 function zoom(key) {
-  const d = CATALOG.find(c => c.key === key); if (!d) return;
-  const it = P().machines.find(m => m.key === key);
+  const d = CATALOG.find(c => c.key === key) || CARDIO_CATALOG.find(c => c.key === key && c.img); if (!d) return;
+  const isCardio = key.startsWith("c-");
+  const it = isCardio ? null : P().machines.find(m => m.key === key);
   const box = document.createElement("div");
   box.className = "lightbox"; box.setAttribute("role", "dialog"); box.setAttribute("aria-modal", "true"); box.setAttribute("aria-label", d.name);
   const pills = setPills(it);
   box.innerHTML = `<div class="lb-in">
     <button class="lb-close" aria-label="Sluiten">×</button>
-    <img src="img/${d.img}.jpg" alt="Instructiebord ${esc(d.name)}">
+    <img src="img/${d.img}.jpg" alt="${isCardio ? "" : "Instructiebord "}${esc(d.name)}">
     <div><h2>${esc(d.name)}</h2><p class="muted" style="margin:4px 0 0">${esc(d.nl)}</p></div>
-    <div class="pills">${pills || `<span class="glasspill">Nog geen instellingen bewaard</span>`}</div>
+    ${isCardio ? "" : `<div class="pills">${pills || `<span class="glasspill">Nog geen instellingen bewaard</span>`}</div>`}
     <ol>${d.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ol>
   </div>`;
   const close = () => { box.remove(); document.removeEventListener("keydown", onKey); };
@@ -1944,7 +2007,7 @@ function trainingMax(x) {
 function workWeight(x) {
   const it = machineByKey(x.m); if (!it) return null;
   const last = machineSessions(it, x.sub || "")[0];
-  return last ? suggest(last, STACKS[stackOf(it)].values).weight : null;
+  return last ? suggest(last, STACKS[stackOf(it)].values, defOf(it)).weight : null;
 }
 const today = () => localDay(new Date());
 const doneToday = (tag) => P().sessions.some(s => s.prog === tag && localDay(s.ts) === today());
@@ -2077,7 +2140,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v23";
+  const APP_VERSION = "cabana-v24";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
