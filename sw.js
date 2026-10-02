@@ -1,5 +1,5 @@
 // Offline-cache: de app werkt ook zonder wifi in de gym.
-const CACHE = "cabana-v25";
+const CACHE = "cabana-v26";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png", "./img/beach.jpg", ...["0473","0474","0475","0476","0477","0478","0480","0481","0482","0483","0484","0485","0486","0487"].map(n => `./img/IMG_${n}.jpg`),
   ...["cardio-treadmill","cardio-elliptical","cardio-elliptical-led","cardio-upright","cardio-hybrid","cardio-recumbent","cardio-nike","cardio-spin","cardio-rower","cardio-climber","cardio-sdrive","str-shoulderpress","str-dipchin","str-hyperext","str-sissy","str-abbench"].map(n => `./img/${n}.jpg`)];
 self.addEventListener("install", e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });

@@ -405,6 +405,9 @@ fieldset { border-color: var(--glass-edge); background: rgb(255 255 255 / .06); 
 .subbtns { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
 .subbtn { min-height: 54px; font-size: 17px; font-weight: 700; }
 .subbtn[aria-pressed="true"] { background: var(--me); color: #fff; border-color: transparent; box-shadow: 0 6px 16px -8px var(--me); }
+.plyoph { display: grid; place-items: center; color: var(--me); background: color-mix(in srgb, var(--me) 14%, var(--surface)) !important; }
+.prog .thumbs .plyoic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: var(--me); background: color-mix(in srgb, var(--me) 14%, var(--surface)); }
+.prog .thumbs .plyoic svg { width: 26px; height: 26px; }
 /* Voortgang: grafiek, hero-getal, overzicht per dag */
 .phero { display: flex; flex-direction: column; gap: 2px; }
 .phero b { font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -715,6 +718,7 @@ const PULLUP_STEPS = {
   B: { name: "Met band", desc: "Pull-ups met weerstandsband of assisted machine.", goal: "3 × 8" },
   C: { name: "Volledig", desc: "Echte pull-ups vanuit dead hang, kin boven de stang.", goal: "3 × 5" }
 };
+const PLANKS = ["Plank", "Zijplank links", "Zijplank rechts"];
 const STRETCHES = ["Hamstrings", "Heupflexoren", "Schouders", "Borst", "Kuiten", "Rug / cat-cow"];
 
 function blankProfile() {
@@ -923,7 +927,7 @@ VIEWS.home = () => {
 function describe(s) {
   if (s.module === "cardio") return [s.duration_min && kg(s.duration_min) + " min", s.distance_km && kg(s.distance_km) + " km", s.kcal && s.kcal + " kcal", s.hr_avg && "♥ " + s.hr_avg].filter(Boolean).join(" · ") || "Foto opgeslagen";
   if (s.exercise === "Dead Hang") return s.seconds + " sec";
-  if (s.module === "goals" && s.kind === "stretch") return s.seconds + " sec";
+  if (s.module === "goals" && (s.kind === "stretch" || s.kind === "plank")) return s.seconds + " sec";
   return `${s.sets} × ${s.reps}${s.weight_kg !== "" && s.weight_kg != null ? " @ " + kg(s.weight_kg) + " kg" : ""}`;
 }
 function histRow(s) {
@@ -1121,8 +1125,8 @@ function machineSessions(it, sub) {
   return P().sessions.filter(s => s.module === "machine" && (s.machine === it.name || s.exercise === it.name) && (!sub || s.sub === sub))
     .sort((a, b) => b.ts.localeCompare(a.ts));
 }
-/* Herhalingen-ladder van Norman: start op 6, dan 8, 10, 12, 15; pas daarna zwaarder en terug naar 6. */
-const REP_LADDER = [6, 8, 10, 12, 15];
+/* Herhalingen-ladder van Norman: start op 6, dan 8, 10, 12; pas daarna zwaarder en terug naar 6. */
+const REP_LADDER = [6, 8, 10, 12];
 function suggest(last, values, d) {
   if (!last) return { sets: 3, reps: REP_LADDER[0], weight: d && d.startKg != null ? d.startKg : d && d.assist && values ? values[Math.min(8, values.length - 1)] : d && d.body ? 0 : values ? values[1] : 20, note: d && d.assist ? "Begin met veel hulpgewicht; elke keer iets minder is vooruitgang." : "" };
   const top = REP_LADDER[REP_LADDER.length - 1];
@@ -1136,7 +1140,7 @@ function suggest(last, values, d) {
   }
   const w = last.weight_kg || 0;
   const s = { sets: last.sets, reps: last.reps, weight: w, note: "" };
-  // Bovenkant van de ladder (15) gehaald: zwaarder en terug naar 6.
+  // Bovenkant van de ladder (12) gehaald: zwaarder en terug naar 6.
   if (last.reps >= top) {
     s.reps = REP_LADDER[0];
     if (values) { const i = nearestIdx(values, w); s.weight = values[Math.min(i + 1, values.length - 1)]; s.note = `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>één plaatje zwaarder (${kg(s.weight)} kg)</b> en terug naar ${REP_LADDER[0]} herhalingen.`; }
@@ -1243,6 +1247,7 @@ VIEWS.goals = () => {
   <div class="head"><h1>Lenigheid & Doelen</h1><p>Speciale doelen en je stretchroutine.</p></div>
   <section class="list" style="grid-template-columns:1fr">
     <button class="item" data-go="hang" style="min-height:96px"><b style="font-size:20px">Dead Hang</b><span>${best ? `Record ${best} sec · laatst ${hangs[0].seconds} sec` : "Seconden-timer · nog geen record"}</span></button>
+    <button class="item" data-go="plank" style="min-height:96px"><b style="font-size:20px">Planken</b><span>${(() => { const pl = P().sessions.filter(s => s.kind === "plank" && s.exercise === "Plank"); return pl.length ? `Record ${Math.max(...pl.map(s => s.seconds || 0))} sec · ook zijplank links en rechts` : "Plank en zijplank, met aftellen"; })()}</span></button>
     <button class="item" data-go="pullup" style="min-height:96px"><b style="font-size:20px">Pull-up opbouw</b><span>Nu op stap ${st}: ${PULLUP_STEPS[st].name} (doel ${PULLUP_STEPS[st].goal})</span></button>
     <button class="item" data-go="stretch" style="min-height:96px"><b style="font-size:20px">Lenigheid</b><span>${stretches ? `${stretches} stretches gelogd` : "Stretch-timer per spiergroep"}</span></button>
   </section>`;
@@ -1314,6 +1319,26 @@ AFTER.stretch = () => {
   timerAfter((secs) => { addSession({ module: "goals", kind: "stretch", exercise: stretchPick, seconds: secs, source: "timer" }); toast(`${stretchPick}: ${secs} sec opgeslagen`); go("stretch"); });
 };
 
+let plankPick = PLANKS[0];
+VIEWS.plank = () => {
+  if (route.pick && PLANKS.includes(route.pick)) plankPick = route.pick;
+  const goal = route.sec ? `<p class="hint" style="margin:0">Uit je schema <b>${esc(route.prog.label)}</b>: houd ${route.sec} seconden vast.</p>` : "";
+  const html = timerView("Planken", "goals", "Lenigheid & Doelen",
+    P().sessions.filter(s => s.kind === "plank" && s.exercise === plankPick).sort((a, b) => b.ts.localeCompare(a.ts)),
+    `<section class="card"><div class="subbtns" role="group" aria-label="Soort plank">${PLANKS.map(s => `<button class="btn subbtn" data-plank="${esc(s)}" aria-pressed="${s === plankPick}">${esc(s)}</button>`).join("")}</div>
+    ${goal}<p class="muted small" style="margin:0">Tik Start en leg de telefoon neer: na 5 tellen (met piepjes) loopt de stopwatch. Ellebogen onder je schouders, lichaam in één rechte lijn.</p></section>`);
+  return route.back ? html.replace(backBtn("goals", "Lenigheid & Doelen"), backBtn(route.back.view, "Terug naar schema", route.back)) : html;
+};
+AFTER.plank = () => {
+  $$("[data-plank]").forEach(b => b.onclick = () => { plankPick = b.dataset.plank; buzz(); go("plank", Object.assign({}, route, { pick: plankPick })); });
+  timerAfter((secs) => {
+    const pg = route.prog ? { prog: route.prog.tag, notes: route.prog.label, source: "schema" } : { source: "timer" };
+    addSession(Object.assign({ module: "goals", kind: "plank", exercise: plankPick, seconds: secs }, pg));
+    toast(`${plankPick}: ${secs} sec opgeslagen`);
+    if (route.back) go(route.back.view, route.back); else go("plank");
+  }, 5);
+};
+
 VIEWS.pullup = () => {
   const p = P(), st = p.pullupStep, info = PULLUP_STEPS[st];
   const hist = P().sessions.filter(s => s.kind === "pullup").sort((a, b) => b.ts.localeCompare(a.ts));
@@ -1366,7 +1391,7 @@ const r2 = (n) => Math.round(n * 100) / 100;
 const vol = (s) => (s.sets && s.reps && s.weight_kg) ? s.sets * s.reps * s.weight_kg : "";
 const isMilestone = (s) => s.source === "mijlpaal";
 const isStrength = (s) => !isMilestone(s) && (s.module === "machine" || s.module === "free" || s.kind === "pullup");
-const isHold = (s) => s.kind === "hang" || s.kind === "stretch";
+const isHold = (s) => s.kind === "hang" || s.kind === "stretch" || s.kind === "plank";
 const whichProfiles = (which) => Object.keys(PROFILES).filter(p => which === "all" || which === p);
 const sessionsOf = (p) => [...state.data[p].sessions].sort((a, b) => a.ts.localeCompare(b.ts));
 
@@ -1858,13 +1883,10 @@ let exp = { which: "all", sep: ",", md: "log" };
 VIEWS.data = () => {
   const n = (p) => state.data[p].sessions.length;
   const used = (() => { try { return Math.round((localStorage.getItem(KEY) || "").length / 1024); } catch (e) { return 0; } })();
-  const vault = exp.md === "vault" ? toVault(exp.which) : null;
-  const mdPrev = vault ? `${vault.length} notities:\n${vault.map(f => "  " + f.name).join("\n")}\n\n── ${vault[0].name} ──\n${vault[0].text}` : toLogbook(exp.which);
   return `${backBtn("home", "Dashboard")}
-  <div class="head"><h1>Data &amp; export</h1><p>Naar Apple Gezondheid, Obsidian, Excel of een AI.</p></div>
+  <div class="head"><h1>Data &amp; export</h1><p>Naar Apple Gezondheid, Google Sheets of een back-up.</p></div>
   <section class="card">
     <div class="stats"><div><b>${n("patrick")}</b><span>Patrick</span></div><div><b>${n("paula")}</b><span>Paula</span></div><div><b>${used}</b><span>kB opgeslagen</span></div></div>
-    <label class="f">Wie exporteren<select class="i" id="exWho"><option value="all">Iedereen</option><option value="patrick">Patrick</option><option value="paula">Paula</option></select></label>
   </section>
   <section class="card">
     <p class="eyebrow">Achtergrond</p>
@@ -1877,24 +1899,9 @@ VIEWS.data = () => {
   </section>
   ${sheetsCard()}
   <section class="card">
-    <p class="eyebrow">Obsidian</p>
-    <label class="f">Vorm<select class="i" id="exMd"><option value="log">Logboek: één notitie met tabellen</option><option value="vault">Vault-map (zip): notitie per dag en per oefening</option></select></label>
-    <p class="muted small" style="margin:0">${vault ? "Pak de zip uit in je vault. Dagen en oefeningen zijn aan elkaar gelinkt en hebben properties (datum, volume_kg, beste_gewicht_kg) voor Dataview en Bases." : "Plak in een lege notitie in Obsidian: tabellen per oefening en per dag, met properties bovenaan. Werkt ook als bron voor een AI."}</p>
-    <div class="row"><button class="btn primary" id="mdDl">${vault ? "Download zip" : "Download .md"}</button>${vault ? "" : `<button class="btn ghost" id="mdCopy">Kopieer markdown</button>`}</div>
-    <pre class="csv" id="mdPrev">${esc(mdPrev)}</pre>
-  </section>
-  <section class="card">
-    <p class="eyebrow">Progressie-sheet (CSV)</p>
-    <label class="f">Formaat<select class="i" id="exSep"><option value=",">Komma (Numbers, Obsidian, AI)</option><option value=";">Puntkomma (Excel NL)</option></select></label>
-    <div class="row"><button class="btn primary" id="exDl">Download CSV</button><button class="btn ghost" id="exCopy">Kopieer CSV</button></div>
-    <button class="btn ghost" data-go="progress">Voortgang met grafiek en Excel-bestand</button>
-    <pre class="csv" id="csvPrev">${esc(toCSV(exp.which, exp.sep))}</pre>
-  </section>
-  <section class="card">
-    <p class="eyebrow">JSON</p>
-    <p class="muted small" style="margin:0">Voor AI: alle sessies en toestelinstellingen per persoon, zonder foto's en lege velden. De back-up bevat alles, ook foto's, om terug te zetten op een andere iPhone.</p>
-    <div class="row"><button class="btn ghost" id="aiCopy">Kopieer JSON voor AI</button><button class="btn ghost" id="aiDl">Download JSON voor AI</button></div>
-    <pre class="csv" id="aiPrev" hidden></pre>
+    <p class="eyebrow">Voortgang en back-up</p>
+    <button class="btn primary" data-go="progress">Voortgang met grafiek en Excel-bestand</button>
+    <p class="muted small" style="margin:0">De back-up bevat alles, ook foto's en instellingen, om terug te zetten op een andere iPhone.</p>
     <div class="row"><button class="btn ghost" id="bkDl">Back-up downloaden</button>
       <label class="btn ghost" style="position:relative;overflow:hidden">Importeren<input type="file" id="bkIn" accept="application/json,.json" style="position:absolute;inset:0;opacity:0"></label></div>
   </section>
@@ -1923,19 +1930,7 @@ AFTER.data = () => {
   };
   const off = $("#gsOff"); if (off) off.onclick = () => { delete state.gsUrl; delete state.gsAt; save(); toast("Ontkoppeld"); go("data"); };
   $$("[data-bg]").forEach(b => b.onclick = () => { state.bg = b.dataset.bg; save(); buzz(); go("data"); });
-  $("#exWho").value = exp.which; $("#exSep").value = exp.sep; $("#exMd").value = exp.md;
-  $("#exWho").onchange = (e) => { exp.which = e.target.value; go("data"); };
-  $("#exSep").onchange = (e) => { exp.sep = e.target.value; go("data"); };
-  $("#exMd").onchange = (e) => { exp.md = e.target.value; go("data"); };
   const stamp = localDay(new Date());
-  $("#mdDl").onclick = () => exp.md === "vault"
-    ? download(`cabana-obsidian-${exp.which}-${stamp}.zip`, zip(toVault(exp.which)))
-    : download(`Cabana logboek ${stamp}.md`, toLogbook(exp.which), "text/markdown;charset=utf-8");
-  const mc = $("#mdCopy"); if (mc) mc.onclick = () => copy(toLogbook(exp.which), $("#mdPrev"));
-  $("#exDl").onclick = () => download(`cabana-progressie-${exp.which}-${stamp}.csv`, "\ufeff" + toCSV(exp.which, exp.sep), "text/csv;charset=utf-8");
-  $("#exCopy").onclick = () => copy(toCSV(exp.which, exp.sep), $("#csvPrev"));
-  $("#aiCopy").onclick = () => { const t = toAIJSON(exp.which), pre = $("#aiPrev"); pre.hidden = false; pre.textContent = t; copy(t, pre); };
-  $("#aiDl").onclick = () => download(`cabana-ai-${exp.which}-${stamp}.json`, toAIJSON(exp.which), "application/json");
   $("#bkDl").onclick = () => download(`cabana-backup-${stamp}.json`, JSON.stringify(state, null, 1), "application/json");
   $("#bkIn").onchange = (e) => {
     const f = e.target.files[0]; if (!f) return;
@@ -1998,7 +1993,7 @@ const PROGRAMS = [
       { name: "Schouders", main: { m: "cable", sub: "Shoulder Press" }, acc: [{ m: "lateral", sets: 3, reps: 12 }, { m: "fly", sub: "Rear Delt", sets: 3, reps: 15 }] }
     ] },
   { id: "circuit", name: "Matrix Circuit", short: "Circuit", tag: "Full body · 3 dagen per week · start",
-    intro: "Hele lichaam in één training, afwisselend A en B (bijv. ma A, wo B, vr A). Rust 60-90 seconden tussen de sets. Haal je 3 × 15, dan stelt de app bij dat toestel één plaatje zwaarder voor.",
+    intro: "Hele lichaam in één training, afwisselend A en B (bijv. ma A, wo B, vr A). Rust 60-90 seconden tussen de sets. Haal je 3 × 12, dan stelt de app bij dat toestel één plaatje zwaarder voor.",
     days: [
       { name: "Training A", ex: [{ m: "legpress", sets: 3, reps: 12 }, { m: "chestpress", sets: 3, reps: 12 }, { m: "latpull", sets: 3, reps: 12 }, { m: "legcurl", sets: 3, reps: 12 }, { m: "abcrunch", sets: 3, reps: 15 }] },
       { name: "Training B", ex: [{ m: "legext", sets: 3, reps: 12 }, { m: "row", sets: 3, reps: 12 }, { m: "lateral", sets: 3, reps: 12 }, { m: "adduction", sets: 3, reps: 12 }, { m: "backext", sets: 3, reps: 12 }] }
@@ -2009,8 +2004,27 @@ const PROGRAMS = [
       { name: "Push", ex: [{ m: "chestpress", sets: 4, reps: 8 }, { m: "cable", sub: "Shoulder Press", sets: 3, reps: 10 }, { m: "fly", sub: "Pec Fly", sets: 3, reps: 12 }, { m: "lateral", sets: 3, reps: 12 }, { m: "cable", sub: "Triceps Pressdown", sets: 3, reps: 12 }] },
       { name: "Pull", ex: [{ m: "latpull", sets: 4, reps: 8 }, { m: "row", sets: 3, reps: 10 }, { m: "fly", sub: "Rear Delt", sets: 3, reps: 15 }, { m: "armcurl", sets: 3, reps: 12 }, { m: "backext", sets: 3, reps: 12 }] },
       { name: "Benen", ex: [{ m: "legpress", sets: 4, reps: 8 }, { m: "legext", sets: 3, reps: 12 }, { m: "legcurl", sets: 3, reps: 12 }, { m: "calfpress", sets: 3, reps: 15 }, { m: "abcrunch", sets: 3, reps: 15 }] }
+    ] },
+  { id: "plyo", name: "Plyometrie & Core", short: "Plyo", tag: "Sprongkracht + planken · 2 dagen per week",
+    intro: "Explosieve sprongen met je eigen gewicht, afgesloten met planken. Doe het uitgerust (na de warming-up, voor de krachttraining) en land zacht op je voorvoeten met licht gebogen knieën. Rust 60 tot 90 seconden tussen de sets. Kwaliteit gaat voor aantal: stop een set als je sprongen lager worden.",
+    days: [
+      { name: "Onderlichaam", ex: [{ f: "Squat Jump", sets: 3, reps: 8 }, { f: "Box Jump", sets: 3, reps: 6 }, { f: "Lunge Jump", sets: 3, reps: 8, tip: "per been" }, { f: "Skater Jump", sets: 3, reps: 10 }, { p: "Plank", sec: 45 }, { p: "Zijplank links", sec: 30 }, { p: "Zijplank rechts", sec: 30 }] },
+      { name: "Hele lichaam", ex: [{ f: "Burpee", sets: 3, reps: 8 }, { f: "Tuck Jump", sets: 3, reps: 6 }, { f: "Plyo Push-up", sets: 3, reps: 6, tip: "handen op een bank mag" }, { f: "Mountain Climber", sets: 3, reps: 20 }, { p: "Plank", sec: 60 }, { p: "Zijplank links", sec: 30 }, { p: "Zijplank rechts", sec: 30 }] }
     ] }
 ];
+/* Plyometrie- en plankoefeningen: geen toestel, dus een getekend icoontje in plaats van een foto */
+const PLYO_TIPS = {
+  "Squat Jump": "Zak tot een halve squat en spring explosief recht omhoog, armen mee.",
+  "Box Jump": "Spring met twee voeten op een stevige box of bank, stap rustig terug naar beneden.",
+  "Lunge Jump": "Vanuit een uitvalspas omhoog springen en in de lucht van been wisselen.",
+  "Skater Jump": "Zijwaarts van het ene been op het andere springen, zacht landen.",
+  "Burpee": "Hurk, voeten naar achteren, push-up, voeten terug en omhoog springen.",
+  "Tuck Jump": "Recht omhoog springen en je knieën naar je borst trekken.",
+  "Plyo Push-up": "Push-up zo krachtig dat je handen even loskomen.",
+  "Mountain Climber": "In push-uphouding snel je knieën om en om naar je borst."
+};
+const PLYO_ICON = `<svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="24" cy="9" r="4"/><path d="M24 14v13M24 18l-9 5M24 18l9-5M24 27l-7 9M24 27l7 9M8 42h32"/><path d="M38 6l3-3M41 10h4" opacity=".6"/></svg>`;
+const PLANK_ICON = `<svg viewBox="0 0 48 48" width="40" height="40" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="22" r="4"/><path d="M13 25l28 6M15 26l1 9h-6M41 31v4M4 37h40"/></svg>`;
 function progState() {
   const p = P();
   if (!p.prog) p.prog = { id: "", week: 0, day: {}, tm: {} };
@@ -2032,7 +2046,7 @@ function trainingMax(x) {
   const best = Math.max(...hist.map(s => s.weight_kg * (1 + Math.min(s.reps, 12) / 30)));
   return { tm: snap(it, best * 0.9), it };
 }
-/* Werkgewicht voor hulpoefeningen: zelfde regel als het toestelscherm (laatste keer, of één plaatje zwaarder na 15 herhalingen). */
+/* Werkgewicht voor hulpoefeningen: zelfde regel als het toestelscherm (laatste keer, of één plaatje zwaarder na 12 herhalingen). */
 function workWeight(x) {
   const it = machineByKey(x.m); if (!it) return null;
   const last = machineSessions(it, x.sub || "")[0];
@@ -2047,16 +2061,16 @@ VIEWS.programs = () => {
   <div class="head"><h1>Trainingsprogramma's</h1><p>Schema's op de Matrix-toestellen van Cabana. Gewichten komen uit jouw eigen logs, afgerond op de echte gewichtsstapel.</p></div>
   <section class="progs">
     ${PROGRAMS.map(pr => {
-      const keys = [...new Set(pr.days.flatMap(d => (d.main ? [d.main] : []).concat(d.acc || d.ex).map(x => x.m)))];
+      const keys = [...new Set(pr.days.flatMap(d => (d.main ? [d.main] : []).concat(d.acc || d.ex).map(x => x.m)).filter(Boolean))];
       return `<button class="item prog${ps.id === pr.id ? " on" : ""}" data-go="program" data-arg='${JSON.stringify({ pid: pr.id })}'>
         <span class="role" style="color:var(--me);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase">${ps.id === pr.id ? "Jouw schema" : esc(pr.short)}</span>
         <b>${esc(pr.name)}</b><span>${esc(pr.tag)}</span>
-        <span class="thumbs">${keys.slice(0, 7).map(k => `<img src="img/${CATALOG.find(c => c.key === k).img}.jpg" alt="" loading="lazy">`).join("")}</span>
+        <span class="thumbs">${keys.length ? "" : `<span class="plyoic">${PLYO_ICON}</span><span class="plyoic">${PLANK_ICON}</span>`}${keys.slice(0, 7).map(k => `<img src="img/${CATALOG.find(c => c.key === k).img}.jpg" alt="" loading="lazy">`).join("")}</span>
       </button>`;
     }).join("")}
   </section>
   <section class="card"><p class="eyebrow">Zo werkt het</p>
-    <p class="small" style="margin:0">Tik bij een oefening op <b>Log</b>: het toestelscherm opent met sets, herhalingen en gewicht al ingevuld. Tik op een foto voor het instructiebord groot, met jouw instellingen.</p>
+    <p class="small" style="margin:0">Tik bij een oefening op <b>Log</b>: het toestelscherm (of de plank-timer) opent met sets, herhalingen en gewicht al ingevuld. Tik op een foto voor het instructiebord groot, met jouw instellingen.</p>
   </section>`;
 };
 
@@ -2095,6 +2109,21 @@ VIEWS.program = () => {
     body += `<div class="exrow">${photo(x)}<div>${head(x, "Hoofdtoestel")}${tm ? "" : `<p class="hint" style="margin:4px 0 6px;font-size:14px">Log eerst één keer ${esc(exName(x))} (bijv. 3 × 8), dan rekent de app je gewichten uit. Of stel de trainingsmax zelf in met + en −.</p>`}${tmRow}${lines}${bbb}</div></div>`;
   }
   body += (day.acc || day.ex).map((x, i) => {
+    if (x.p) {
+      const tag = `${tagBase}|x${i}`, done = doneToday(tag);
+      const recs = P().sessions.filter(s => s.kind === "plank" && s.exercise === x.p).map(s => s.seconds || 0);
+      const arg = esc(JSON.stringify({ p: x.p, sec: x.sec, tag, label, back }));
+      return `<div class="exrow"><span class="ph plyoph">${PLANK_ICON}</span><div><span class="role">Core</span><h4>${esc(x.p)}</h4><p class="set-info">${recs.length ? `Record ${Math.max(...recs)} sec` : "Timer met 5 tellen aftellen"}</p>
+        <div class="setline"><span><b>${x.sec} sec</b><small>Vasthouden</small></span><button class="logbtn${done ? " done" : ""}" data-plog="${arg}">${done ? "✓ Gedaan" : "Start"}</button></div></div></div>`;
+    }
+    if (x.f) {
+      const it = P().free.find(f => f.name === x.f), last = it ? sessionsFor("free", x.f)[0] : null;
+      const w = last && +last.weight_kg ? +last.weight_kg : 0;
+      const arg = esc(JSON.stringify({ f: x.f, sets: x.sets, reps: x.reps, w, tag: `${tagBase}|x${i}`, label, back }));
+      const done = doneToday(`${tagBase}|x${i}`);
+      return `<div class="exrow"><span class="ph plyoph">${PLYO_ICON}</span><div><span class="role">Oefening ${i + 1}</span><h4>${esc(x.f)}</h4><p class="set-info">${esc(PLYO_TIPS[x.f] || "")}</p>
+        <div class="setline"><span><b>${x.sets} × ${x.reps}${w ? " @ " + kg(w) + " kg" : ""}</b><small>${x.tip ? esc(x.tip) + " · " : ""}eigen lichaamsgewicht</small></span><button class="logbtn${done ? " done" : ""}" data-log="${arg}">${done ? "✓ Gedaan" : "Log"}</button></div></div></div>`;
+    }
     const w = workWeight(x);
     return `<div class="exrow">${photo(x)}<div>${head(x, pr.wave ? "Hulpoefening" : "Oefening " + (i + 1))}
       <div class="setline"><span><b>${x.sets} × ${x.reps}${w != null ? " @ " + kg(w) + " kg" : ""}</b><small>${w != null ? "Op basis van je laatste keer" : "Eerste keer: kies je startgewicht"}</small></span>${logBtn(x, x.sets, x.reps, w, `${tagBase}|x${i}`)}</div>
@@ -2124,8 +2153,18 @@ AFTER.program = () => {
     else { const { tm, it } = trainingMax(x); if (!it) return; const v = stackVals(it); const i = tm ? nearestIdx(v, tm) + d : 5; ps.tm[k] = v[Math.max(0, Math.min(v.length - 1, i))]; }
     save(); buzz(); go("program", { pid: pr.id, day: di });
   });
+  $$("[data-plog]").forEach(b => b.onclick = () => {
+    const a = JSON.parse(b.dataset.plog);
+    buzz(); go("plank", { pick: a.p, sec: a.sec, prog: { tag: a.tag, label: a.label }, back: Object.assign({ view: "program" }, a.back) });
+  });
   $$("[data-log]").forEach(b => b.onclick = () => {
-    const a = JSON.parse(b.dataset.log), it = machineByKey(a.m);
+    const a = JSON.parse(b.dataset.log);
+    if (a.f) {
+      let it = P().free.find(f => f.name === a.f);
+      if (!it) { it = { id: uid(), name: a.f, seat: "", back: "", extra: "", comment: "" }; P().free.push(it); save(); }
+      buzz(); return go("strength", { id: it.id, preset: { sets: a.sets, reps: a.reps, weight: a.w }, prog: { tag: a.tag, label: a.label }, back: Object.assign({ view: "program" }, a.back) });
+    }
+    const it = machineByKey(a.m);
     if (!it) return toast("Dit toestel staat niet meer in je lijst");
     if (a.sub) subPick[it.id] = a.sub;
     buzz(); go("strength", { id: it.id, preset: { sets: a.sets, reps: a.reps, weight: a.w }, prog: { tag: a.tag, label: a.label }, back: Object.assign({ view: "program" }, a.back) });
@@ -2169,7 +2208,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v25";
+  const APP_VERSION = "cabana-v26";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
