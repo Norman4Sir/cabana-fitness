@@ -402,6 +402,9 @@ fieldset { border-color: var(--glass-edge); background: rgb(255 255 255 / .06); 
 .setbox[open] summary > span::after { content: "Tik om in te klappen"; }
 .setbox summary .muted { font-weight: 500; }
 .setbox .settings-grid { margin-top: 10px; }
+.subbtns { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px; }
+.subbtn { min-height: 54px; font-size: 17px; font-weight: 700; }
+.subbtn[aria-pressed="true"] { background: var(--me); color: #fff; border-color: transparent; box-shadow: 0 6px 16px -8px var(--me); }
 /* Voortgang: grafiek, hero-getal, overzicht per dag */
 .phero { display: flex; flex-direction: column; gap: 2px; }
 .phero b { font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -695,8 +698,8 @@ const CATALOG = [
     tips: ["Zithoogte zo dat je handen net boven je schouders zitten.", "Rug recht, schouders tegen de pad.", "Pak de grepen en duw ze boven je hoofd tot bijna gestrekt (ellebogen niet op slot), rustig terug."] },
   { key: "dipchin", name: "Dip / Chin Assist", nl: "Hulp bij dippen en optrekken", img: "str-dipchin", stack: "small", fields: ["Handgreep"], exercises: ["Dip Assist", "Chin Assist"], assist: true,
     tips: ["Let op: het gewicht helpt je. Meer gewicht is lichter, minder gewicht is zwaarder.", "Stap op de voetsteunen, kies je handgrepen en zet één voor één je knieën op de pad.", "Dip: zak rustig en duw terug omhoog. Chin: trek jezelf op en zak rustig terug."] },
-  { key: "hyperext", name: "Hyperextension", nl: "Rugstrekbank (45°)", img: "str-hyperext", stack: "fine", body: true, fields: ["Heuppad (gaatje)"],
-    tips: ["Zet de heuppads zo dat je heupen er net overheen kunnen buigen.", "Hielen onder de rollen, armen gekruist voor je borst (of een gewicht vasthouden).", "Buig rustig voorover en kom terug tot je lichaam een rechte lijn is, niet verder."] },
+  { key: "hyperext", name: "Hyperextension", nl: "Rugstrekbank (45°) met kettlebell", img: "str-hyperext", stack: "fine", startKg: 25, fields: ["Heuppad (gaatje)"], exercises: ["Rug", "Buik", "L. Flank", "R. Flank"],
+    tips: ["Zet de heuppads zo dat je heupen er net overheen kunnen buigen, hielen onder de rollen.", "Rug: buik naar de pad, kettlebell tegen je borst, rustig voorover en terug tot een rechte lijn.", "Buik: rug naar de pad, rustig achterover en met je buikspieren terug omhoog.", "L. Flank en R. Flank: op je zij, kettlebell tegen je borst, zijwaarts zakken en terug."] },
   { key: "sissy", name: "Sissy Squat", nl: "Kniebank met kuitrollen", img: "str-sissy", stack: "fine", body: true, fields: ["Kuitrollen (gaatje)"],
     tips: ["Voeten op de plaat, kuiten tegen de rollen, schenen tegen de kniepad.", "Leun met rechte romp achterover en zak door je knieën.", "Duw jezelf terug omhoog met je bovenbenen."] },
   { key: "abbench", name: "Buikbank", nl: "Schuine sit-up-bank", img: "str-abbench", stack: "fine", body: true, fields: ["Stand voetsteun"], exercises: ["Sit-up", "V-sit hold", "Leg raise"],
@@ -1118,19 +1121,26 @@ function machineSessions(it, sub) {
   return P().sessions.filter(s => s.module === "machine" && (s.machine === it.name || s.exercise === it.name) && (!sub || s.sub === sub))
     .sort((a, b) => b.ts.localeCompare(a.ts));
 }
+/* Herhalingen-ladder van Norman: start op 6, dan 8, 10, 12, 15; pas daarna zwaarder en terug naar 6. */
+const REP_LADDER = [6, 8, 10, 12, 15];
 function suggest(last, values, d) {
-  if (!last) return { sets: 3, reps: 10, weight: d && d.assist && values ? values[Math.min(8, values.length - 1)] : d && d.body ? 0 : values ? values[1] : 20, note: d && d.assist ? "Begin met veel hulpgewicht; elke keer iets minder is vooruitgang." : "" };
-  if (d && d.assist && last.reps >= 15 && values) {
+  if (!last) return { sets: 3, reps: REP_LADDER[0], weight: d && d.startKg != null ? d.startKg : d && d.assist && values ? values[Math.min(8, values.length - 1)] : d && d.body ? 0 : values ? values[1] : 20, note: d && d.assist ? "Begin met veel hulpgewicht; elke keer iets minder is vooruitgang." : "" };
+  const top = REP_LADDER[REP_LADDER.length - 1];
+  if (last.reps < top) {
+    const w = last.weight_kg || 0, next = REP_LADDER.find(r => r > last.reps);
+    return { sets: last.sets, reps: next, weight: w, note: `Vorige keer <b>${last.sets} × ${last.reps} @ ${kg(w)} kg</b>. Ging dat goed? Voorstel: <b>${last.sets} × ${next}</b>, zelfde gewicht. Nog te zwaar? Draai terug naar ${last.reps}.` };
+  }
+  if (d && d.assist && values) {
     const w = last.weight_kg || 0, i = nearestIdx(values, w), nw = values[Math.max(i - 1, 0)];
-    return { sets: last.sets, reps: 8, weight: nw, note: `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>één plaatje minder hulp (${kg(nw)} kg)</b> en terug naar 8 herhalingen.` };
+    return { sets: last.sets, reps: REP_LADDER[0], weight: nw, note: `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>één plaatje minder hulp (${kg(nw)} kg)</b> en terug naar ${REP_LADDER[0]} herhalingen.` };
   }
   const w = last.weight_kg || 0;
   const s = { sets: last.sets, reps: last.reps, weight: w, note: "" };
-  // Dubbele progressie: haal je de bovenkant van het rep-bereik (15), dan zwaarder en terug naar 8.
-  if (last.reps >= 15) {
-    s.reps = 8;
-    if (values) { const i = nearestIdx(values, w); s.weight = values[Math.min(i + 1, values.length - 1)]; s.note = `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>één plaatje zwaarder (${kg(s.weight)} kg)</b> en terug naar 8 herhalingen.`; }
-    else { s.weight = w + 2.5; s.note = `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>+2,5 kg</b> en terug naar 8 herhalingen.`; }
+  // Bovenkant van de ladder (15) gehaald: zwaarder en terug naar 6.
+  if (last.reps >= top) {
+    s.reps = REP_LADDER[0];
+    if (values) { const i = nearestIdx(values, w); s.weight = values[Math.min(i + 1, values.length - 1)]; s.note = `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>één plaatje zwaarder (${kg(s.weight)} kg)</b> en terug naar ${REP_LADDER[0]} herhalingen.`; }
+    else { s.weight = w + 2.5; s.note = `Vorige keer ${last.sets}×${last.reps} gehaald. Voorstel: <b>+2,5 kg</b> en terug naar ${REP_LADDER[0]} herhalingen.`; }
   } else s.note = `Vorige keer <b>${last.sets} × ${last.reps} @ ${kg(w)} kg</b>. Zelfde gewicht, probeer meer herhalingen.`;
   return s;
 }
@@ -1170,10 +1180,11 @@ VIEWS.strength = () => {
   ${setDone ? "" : setCard}
   <section class="card">
     <p class="eyebrow">Vandaag</p>
-    ${subs ? `<label class="f">Oefening<select class="i" id="subSel">${subs.map(x => `<option${x === sub ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>` : ""}
+    ${subs && subs.length <= 6 ? `<div class="subbtns" role="group" aria-label="Oefening">${subs.map(x => `<button class="btn subbtn" data-sub="${esc(x)}" aria-pressed="${x === sub}">${esc(x)}</button>`).join("")}</div>`
+      : subs ? `<label class="f">Oefening<select class="i" id="subSel">${subs.map(x => `<option${x === sub ? " selected" : ""}>${esc(x)}</option>`).join("")}</select></label>` : ""}
     ${sg.note ? `<p class="hint" style="margin:0">${sg.note}</p>` : `<p class="hint" style="margin:0">Eerste keer: kies je startgewicht met de draaiknop.</p>`}
     <div class="chips" role="group" aria-label="Snelkeuze">
-      ${[[3, 8], [3, 10], [3, 12], [3, 15]].map(([s, r]) => `<button class="chip" data-preset="${s}x${r}">${s}×${r}</button>`).join("")}
+      ${REP_LADDER.map(r => [3, r]).map(([s, r]) => `<button class="chip" data-preset="${s}x${r}">${s}×${r}</button>`).join("")}
     </div>
     <div class="wheels">
       ${wheelHTML("wSets", "Sets", SETS, cur.sets)}
@@ -1210,6 +1221,8 @@ AFTER.strength = () => {
     $("#s_stack").onchange = (e) => { it.stack = e.target.value; save(); go("strength", route); };
     const ss = $("#subSel");
     if (ss) { sub = ss.value; ss.onchange = () => { subPick[it.id] = ss.value; go("strength", { id: it.id, back: route.back }); }; }
+    const sb = $$("[data-sub]");
+    if (sb.length) { sub = (sb.find(b => b.getAttribute("aria-pressed") === "true") || sb[0]).dataset.sub; sb.forEach(b => b.onclick = () => { buzz(); subPick[it.id] = b.dataset.sub; go("strength", { id: it.id, back: route.back }); }); }
   }
   $("#stSave").onclick = () => {
     const extra = isMachine ? { machine: it.name, sub, settings: Object.entries(it.settings).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join("; ") } : {};
@@ -2156,7 +2169,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v24";
+  const APP_VERSION = "cabana-v25";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
