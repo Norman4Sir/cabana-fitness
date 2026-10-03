@@ -648,6 +648,8 @@ const MODULES = { cardio: "Cardio Cabana", machine: "Fitness Toestellen", free: 
 const DEFAULT_CARDIO = ["Loopband", "Crosstrainer", "Hometrainer", "Roeier", "ClimbMill", "Ligfiets"]; // oude lijst (v2), voor migratie
 /* Cardiotoestellen van Cabana (foto's van Norman, 1 okt 2026). De naam blijft de sleutel van je eerdere sessies. */
 const CARDIO_CATALOG = [
+  { key: "c-climbmill", name: "ClimbMill", nl: "Matrix Endurance Stepper · weerstand 1 tot 30", img: "cardio-stepper",
+    tips: ["Niveau is de weerstand, van 1 tot 30.", "Volgorde van de getallen: niveau, tijd, hartslag, kcal, verdiepingen, stappen per minuut, stappen."] },
   { key: "c-treadmill", name: "Loopband", nl: "Matrix-loopband met touchscreen", img: "cardio-treadmill",
     tips: ["Het scherm toont woorden (TIME, MILES, CALORIES, MPH, % INCLINE): Kopieer alles werkt hier het best.", "Mijlen en mph worden omgerekend naar km en km/u, de helling gaat in de notitie.", "Tip: lees af op het eindscherm, dan staat de totale tijd er en niet een rondetijd."] },
   { key: "c-elliptical", name: "Crosstrainer", nl: "Matrix-crosstrainer met LED-console (Sprint 8)", img: "cardio-elliptical",
@@ -666,8 +668,6 @@ const CARDIO_CATALOG = [
     tips: ["Het kleine scherm toont tijd, kcal, watt en RPM; plak of typ wat je ziet.", "Watt of RPM die niet in een veld passen, komen in de notitie."] },
   { key: "c-rower", name: "Roeier", nl: "Matrix-roeitoestel", img: "cardio-rower",
     tips: ["Plak het eindscherm; tijd, afstand en kcal worden ingevuld.", "Afstand op een roeier staat in meters: vul het in km in (2000 m = 2)."] },
-  { key: "c-climbmill", name: "ClimbMill", nl: "Matrix-traploper (stepper)", img: "",
-    tips: ["Volgorde van de getallen: niveau, tijd, hartslag, kcal, verdiepingen, stappen per minuut, stappen."] },
   { key: "c-climber", name: "Klimtoestel", nl: "Verticale klimmer", img: "cardio-climber",
     tips: ["Vul tijd en wat het schermpje toont zelf in, of plak het met Live Text."] },
   { key: "c-sdrive", name: "S-Drive", nl: "Matrix S-Drive sleetrainer (duwen en trekken)", img: "cardio-sdrive",
@@ -731,7 +731,10 @@ const CATALOG = [
 const CUSTOM_FIELDS = ["Zithoogte", "Rugleuning", "Overige instelling"];
 const defOf = (it) => CATALOG.find(c => c.key === it.key) || { name: it.name, nl: "Eigen toestel", stack: "fine", fields: CUSTOM_FIELDS, tips: [] };
 const stackOf = (it) => it.stack || defOf(it).stack;
-const catalogMachines = () => CATALOG.map(c => ({ id: uid(), key: c.key, name: c.name, settings: {}, comment: "" }));
+/* Basis van Norman: deze toestellen staan bovenaan de lijst (rest in de volgorde van de catalogus) */
+const MACHINE_TOP = ["dipchin", "abbench", "backext", "abcrunch", "hyperext", "sissy"];
+const topFirst = (list, top) => [...list].sort((a, b) => { const i = top.indexOf(a.key), j = top.indexOf(b.key); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+const catalogMachines = () => topFirst(CATALOG, MACHINE_TOP).map(c => ({ id: uid(), key: c.key, name: c.name, settings: {}, comment: "" }));
 const DEFAULT_FREE = ["Squat", "Deadlift", "Bench Press", "Overhead Press", "Dumbbell Row", "Biceps Curl"];
 const PULLUP_STEPS = {
   A: { name: "Negatieven", desc: "Spring of stap omhoog en zak zo langzaam mogelijk (3-5 sec).", goal: "3 × 5" },
@@ -751,14 +754,15 @@ let state;
 function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
-  if (!s || !s.data) s = { profile: "patrick", data: {}, v: 3 };
+  if (!s || !s.data) s = { profile: "patrick", data: {}, v: 4 };
   for (const p in PROFILES) if (!s.data[p]) s.data[p] = blankProfile();
   if (!PROFILES[s.profile]) s.profile = "patrick";
   return migrate(s);
 }
 /* v1 → v2: generieke toestellen vervangen door de echte Cabana-toestellen; eigen toestellen blijven. */
 function migrate(s) {
-  if (s.v >= 3) return s;
+  if (s.v >= 4) return s;
+  if (s.v < 3 || !s.v) {
   if (s.v < 2 || !s.v) for (const p in s.data) {
     const d = s.data[p];
     const own = (d.machines || []).filter(m => !m.key && !DEFAULT_MACHINES.includes(m.name))
@@ -777,7 +781,14 @@ function migrate(s) {
     const ownM = d.machines.filter(m => !m.key);
     d.machines = d.machines.filter(m => m.key).concat(CATALOG.filter(c => !mk.has(c.key)).map(c => ({ id: uid(), key: c.key, name: c.name, settings: {}, comment: "" })), ownM);
   }
-  s.v = 3;
+  }
+  /* v3 → v4: stepper en loopband bovenaan bij cardio, de basistoestellen bovenaan bij kracht */
+  for (const p in s.data) {
+    const d = s.data[p];
+    if (d.cardio) d.cardio = topFirst(d.cardio, ["c-climbmill", "c-treadmill"]);
+    if (d.machines) d.machines = topFirst(d.machines, MACHINE_TOP);
+  }
+  s.v = 4;
   return s;
 }
 function save() {
@@ -2117,15 +2128,18 @@ const PROGRAMS = [
       { name: "Pull", ex: [{ m: "latpull", sets: 4, reps: 8 }, { m: "row", sets: 3, reps: 10 }, { m: "fly", sub: "Rear Delt", sets: 3, reps: 15 }, { m: "armcurl", sets: 3, reps: 12 }, { m: "backext", sets: 3, reps: 12 }] },
       { name: "Benen", ex: [{ m: "legpress", sets: 4, reps: 8 }, { m: "legext", sets: 3, reps: 12 }, { m: "legcurl", sets: 3, reps: 12 }, { m: "calfpress", sets: 3, reps: 15 }, { m: "abcrunch", sets: 3, reps: 15 }] }
     ] },
-  { id: "plyo", name: "Plyometrie & Core", short: "Plyo", tag: "Sprongkracht + planken · 2 dagen per week",
-    intro: "Explosieve sprongen met je eigen gewicht, afgesloten met planken. Doe het uitgerust (na de warming-up, voor de krachttraining) en land zacht op je voorvoeten met licht gebogen knieën. Rust 60 tot 90 seconden tussen de sets. Kwaliteit gaat voor aantal: stop een set als je sprongen lager worden.",
+  { id: "plyo", name: "Plyometrie: stepplank", short: "Plyo", tag: "Sprongen op één been · 1, 2 en 3 treden",
+    intro: "Drie stepplanken: de eerste op 1 trede, de tweede op 2 en de derde op 3. Spring op één been op de plank en weer eraf, 6 keer, dan 6 keer met het andere been. Daarna de volgende plank. Land zacht op je voorvoet met een licht gebogen knie. Lukt de hoogste plank nog niet, sla hem dan over.",
     days: [
-      { name: "Onderlichaam", ex: [{ f: "Squat Jump", sets: 3, reps: 8 }, { f: "Box Jump", sets: 3, reps: 6 }, { f: "Lunge Jump", sets: 3, reps: 8, tip: "per been" }, { f: "Skater Jump", sets: 3, reps: 10 }, { p: "Plank", sec: 45 }, { p: "Zijplank links", sec: 30 }, { p: "Zijplank rechts", sec: 30 }] },
-      { name: "Hele lichaam", ex: [{ f: "Burpee", sets: 3, reps: 8 }, { f: "Tuck Jump", sets: 3, reps: 6 }, { f: "Plyo Push-up", sets: 3, reps: 6, tip: "handen op een bank mag" }, { f: "Mountain Climber", sets: 3, reps: 20 }, { p: "Plank", sec: 60 }, { p: "Zijplank links", sec: 30 }, { p: "Zijplank rechts", sec: 30 }] }
+      { name: "Stepplank", ex: [{ f: "Stepsprong 1 trede", sets: 2, reps: 6, tip: "6 per been" }, { f: "Stepsprong 2 treden", sets: 2, reps: 6, tip: "6 per been" }, { f: "Stepsprong 3 treden", sets: 2, reps: 6, tip: "6 per been" }] }
     ] }
 ];
 /* Plyometrie- en plankoefeningen: geen toestel, dus een getekend icoontje in plaats van een foto */
+const PLYO_IMG = { "Stepsprong 1 trede": "stepplank", "Stepsprong 2 treden": "stepplank", "Stepsprong 3 treden": "stepplank" };
 const PLYO_TIPS = {
+  "Stepsprong 1 trede": "Plank op 1 trede. Op één been erop springen en eraf: 6 keer links, dan 6 keer rechts.",
+  "Stepsprong 2 treden": "Plank op 2 treden. Op één been erop springen en eraf: 6 keer links, dan 6 keer rechts.",
+  "Stepsprong 3 treden": "Plank op 3 treden. Op één been erop springen en eraf: 6 keer links, dan 6 keer rechts.",
   "Squat Jump": "Zak tot een halve squat en spring explosief recht omhoog, armen mee.",
   "Box Jump": "Spring met twee voeten op een stevige box of bank, stap rustig terug naar beneden.",
   "Lunge Jump": "Vanuit een uitvalspas omhoog springen en in de lucht van been wisselen.",
@@ -2177,7 +2191,7 @@ VIEWS.programs = () => {
       return `<button class="item prog${ps.id === pr.id ? " on" : ""}" data-go="program" data-arg='${JSON.stringify({ pid: pr.id })}'>
         <span class="role" style="color:var(--me);font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase">${ps.id === pr.id ? "Jouw schema" : esc(pr.short)}</span>
         <b>${esc(pr.name)}</b><span>${esc(pr.tag)}</span>
-        <span class="thumbs">${keys.length ? "" : `<span class="plyoic">${PLYO_ICON}</span><span class="plyoic">${PLANK_ICON}</span>`}${keys.slice(0, 7).map(k => `<img src="img/${CATALOG.find(c => c.key === k).img}.jpg" alt="" loading="lazy">`).join("")}</span>
+        <span class="thumbs">${keys.length ? "" : pr.id === "plyo" ? `<img src="img/stepplank.jpg" alt="" loading="lazy" style="object-fit:contain;background:#fff">` : `<span class="plyoic">${PLYO_ICON}</span>`}${keys.slice(0, 7).map(k => `<img src="img/${CATALOG.find(c => c.key === k).img}.jpg" alt="" loading="lazy">`).join("")}</span>
       </button>`;
     }).join("")}
   </section>
@@ -2233,7 +2247,7 @@ VIEWS.program = () => {
       const w = last && +last.weight_kg ? +last.weight_kg : 0;
       const arg = esc(JSON.stringify({ f: x.f, sets: x.sets, reps: x.reps, w, tag: `${tagBase}|x${i}`, label, back }));
       const done = doneToday(`${tagBase}|x${i}`);
-      return `<div class="exrow"><span class="ph plyoph">${PLYO_ICON}</span><div><span class="role">Oefening ${i + 1}</span><h4>${esc(x.f)}</h4><p class="set-info">${esc(PLYO_TIPS[x.f] || "")}</p>
+      return `<div class="exrow">${PLYO_IMG[x.f] ? `<span class="ph"><img src="img/${PLYO_IMG[x.f]}.jpg" alt="" loading="lazy" style="object-fit:contain;background:#fff"></span>` : `<span class="ph plyoph">${PLYO_ICON}</span>`}<div><span class="role">Oefening ${i + 1}</span><h4>${esc(x.f)}</h4><p class="set-info">${esc(PLYO_TIPS[x.f] || "")}</p>
         <div class="setline"><span><b>${x.sets} × ${x.reps}${w ? " @ " + kg(w) + " kg" : ""}</b><small>${x.tip ? esc(x.tip) + " · " : ""}eigen lichaamsgewicht</small></span><button class="logbtn${done ? " done" : ""}" data-log="${arg}">${done ? "✓ Gedaan" : "Log"}</button></div></div></div>`;
     }
     const w = workWeight(x);
@@ -2320,7 +2334,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v30";
+  const APP_VERSION = "cabana-v31";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
