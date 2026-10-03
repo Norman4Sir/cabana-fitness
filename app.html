@@ -384,6 +384,9 @@ fieldset { border-color: var(--glass-edge); background: rgb(255 255 255 / .06); 
 .how summary b { font-size: 17px; }
 .how ol { margin: 4px 0 0; }
 /* Toestel: instellingen en stappen ingeklapt zodra je ze hebt ingevuld */
+.fold summary > span::after { content: "Tik om te openen"; }
+.fold[open] summary > span::after { content: "Tik om in te klappen"; }
+.fold[open] > summary { margin-bottom: 4px; }
 .setbox summary > span::after { content: "Tik om aan te passen"; }
 .setbox[open] summary > span::after { content: "Tik om in te klappen"; }
 .setbox summary .muted { font-weight: 500; }
@@ -1709,11 +1712,6 @@ VIEWS.progress = () => {
     <div class="stats"><div><b>${kg(top)}</b><span>Record${M.unit}</span></div><div><b>${kg(last.v)}</b><span>Laatste${M.unit}</span></div><div><b>${pts.length}</b><span>${pts.length === 1 ? "Training" : "Trainingen"}</span></div></div>
   </section>
   <section class="card">
-    <p class="eyebrow">Excel</p>
-    <p class="muted small" style="margin:0">Alle krachttraining van ${PROFILES[state.profile]} in één bestand: een overzicht per dag en oefening met gewicht, en een blad Progressie met een grafiek van je zwaarste gewicht per oefening. Opent in Numbers en Excel.</p>
-    <button class="btn primary" id="xlsxDl">Download Excel-bestand</button>
-  </section>
-  <section class="card">
     <p class="eyebrow">Per dag</p>
     <div class="pdays">${shown.map(k => `<div class="pday"><h4>${esc(dayLabel(k))}</h4>${days[k].map(s => `<div class="prow"><span>${esc(s.exercise)}</span><b>${esc(describe(s))}${recs.has(s.id) ? ` <span class="pbadge">Record</span>` : ""}</b></div>`).join("")}</div>`).join("")}</div>
     ${dayKeys.length > shown.length ? `<button class="btn ghost" id="pAll">Toon alle ${dayKeys.length} dagen</button>` : ""}
@@ -1743,7 +1741,6 @@ AFTER.progress = () => {
     abox.addEventListener("pointerdown", ashow); abox.addEventListener("pointermove", ashow); abox.addEventListener("pointerleave", ahide);
   }
 
-  $("#xlsxDl").onclick = () => { download(`Cabana voortgang ${PROFILES[state.profile]} ${localDay(Date.now())}.xlsx`, toXlsx(state.profile), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); toast("Excel-bestand gemaakt"); };
   const box = $("#pchart"), tip = $("#pcTip"), cross = $("#pcCross"), svg = box.querySelector("svg");
   const pts = JSON.parse(box.dataset.pts), unit = box.dataset.unit;
   const show = (e) => {
@@ -1768,7 +1765,7 @@ function progCard() {
   const sp = n > 1 ? pts.map((p, i) => `${i ? "L" : "M"}${(4 + i / (n - 1) * 112).toFixed(1)} ${(36 - (hi > lo ? (p.v - lo) / (hi - lo) : .5) * 30).toFixed(1)}`).join(" ") : "";
   const d = n > 1 ? r2(vals[n - 1] - vals[0]) : 0;
   return `<button class="card pmini" data-go="progress">
-    <span class="pm-t"><span class="eyebrow">Voortgang</span><b>${esc(ex)}</b><span class="muted small">${n > 1 ? `${d > 0 ? "+" : d < 0 ? "−" : "±"}${kg(Math.abs(d))} sinds ${shortDay(pts[0].day)}` : "Tik voor je grafieken en Excel"}</span></span>
+    <span class="pm-t"><span class="eyebrow">Voortgang</span><b>${esc(ex)}</b><span class="muted small">${n > 1 ? `${d > 0 ? "+" : d < 0 ? "−" : "±"}${kg(Math.abs(d))} sinds ${shortDay(pts[0].day)}` : "Tik voor je grafieken"}</span></span>
     ${sp ? `<svg viewBox="0 0 120 40" aria-hidden="true"><path d="${sp}" fill="none" stroke="var(--me)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ""}
   </button>`;
 }
@@ -1865,8 +1862,8 @@ function syncSheet(manual) {
 }
 const syncSoon = () => { if (!state.gsUrl) return; clearTimeout(gsT); gsT = setTimeout(() => syncSheet(false), 1500); };
 function sheetsCard() {
-  return `<section class="card">
-    <p class="eyebrow">Google Sheets</p>
+  return `<details class="card plate how fold">
+    <summary><span><b>Google Sheets</b>${state.gsAt ? `Laatst verstuurd: ${esc(fmtDate(state.gsAt))}` : "Nog niet gekoppeld"}</span></summary>
     <p class="muted small" style="margin:0">Elke oefening die je opslaat, van Patrick en Paula, komt vanzelf in je eigen Google Sheet: een blad Log met alles en per persoon een blad Progressie met grafiek.</p>
     <label class="f">Web app URL<input class="i" id="gsUrl" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(state.gsUrl || "")}"></label>
     <div class="row"><button class="btn primary" id="gsSave">${state.gsUrl ? "Nu bijwerken" : "Koppelen en versturen"}</button>${state.gsUrl ? `<button class="btn ghost" id="gsOff">Ontkoppelen</button>` : ""}</div>
@@ -1881,7 +1878,7 @@ function sheetsCard() {
         <li>Zet die URL op je iPhone (bijvoorbeeld via Notes of AirDrop), plak hem hierboven en tik op <b>Koppelen en versturen</b>.</li>
       </ol>
     </details>
-  </section>`;
+  </details>`;
 }
 
 /* ---------- Apple Gezondheid via de app Opdrachten ----------
@@ -1994,26 +1991,21 @@ VIEWS.data = () => {
     <div class="stats"><div><b>${n("patrick")}</b><span>Patrick</span></div><div><b>${n("paula")}</b><span>Paula</span></div><div><b>${used}</b><span>kB opgeslagen</span></div></div>
   </section>
   <section class="card">
-    <p class="eyebrow">Achtergrond</p>
-    <div class="chips"><button class="chip" data-bg="photo" aria-pressed="${state.bg !== "sunset"}">Strandfoto</button><button class="chip" data-bg="sunset" aria-pressed="${state.bg === "sunset"}">Getekende zonsondergang</button></div>
-  </section>
-  <section class="card">
     <p class="eyebrow">Apple Gezondheid</p>
     <p class="muted small" style="margin:0">Je krachttraining van ${PROFILES[state.profile]} als workout in Gezondheid en Fitness, met één tik via Opdrachten.</p>
     <button class="btn primary" data-go="health">Naar Apple Gezondheid</button>
   </section>
   ${sheetsCard()}
   <section class="card">
-    <p class="eyebrow">Voortgang en back-up</p>
-    <button class="btn primary" data-go="progress">Voortgang met grafiek en Excel-bestand</button>
+    <p class="eyebrow">Back-up</p>
     <p class="muted small" style="margin:0">De back-up bevat alles, ook foto's en instellingen, om terug te zetten op een andere iPhone.</p>
     <div class="row"><button class="btn ghost" id="bkDl">Back-up downloaden</button>
       <label class="btn ghost" style="position:relative;overflow:hidden">Importeren<input type="file" id="bkIn" accept="application/json,.json" style="position:absolute;inset:0;opacity:0"></label></div>
   </section>
-  <section class="card" id="wipeBox">
-    <p class="eyebrow">Opruimen</p>
+  <details class="card plate how fold" id="wipeBox">
+    <summary><span><b>Opruimen</b></span></summary>
     <button class="btn danger" id="wipe">Alle sessies van ${PROFILES[state.profile]} wissen</button>
-  </section>`;
+  </details>`;
 };
 function download(name, data, type) {
   try {
@@ -2034,7 +2026,6 @@ AFTER.data = () => {
     state.gsUrl = u; save(); syncSheet(true).then(() => go("data"));
   };
   const off = $("#gsOff"); if (off) off.onclick = () => { delete state.gsUrl; delete state.gsAt; save(); toast("Ontkoppeld"); go("data"); };
-  $$("[data-bg]").forEach(b => b.onclick = () => { state.bg = b.dataset.bg; save(); buzz(); go("data"); });
   const stamp = localDay(new Date());
   $("#bkDl").onclick = () => download(`cabana-backup-${stamp}.json`, JSON.stringify(state, null, 1), "application/json");
   $("#bkIn").onchange = (e) => {
@@ -2313,7 +2304,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v29";
+  const APP_VERSION = "cabana-v30";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
