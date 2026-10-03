@@ -632,8 +632,8 @@ const MODULES = { cardio: "Cardio Cabana", machine: "Fitness Toestellen", free: 
 const DEFAULT_CARDIO = ["Loopband", "Crosstrainer", "Hometrainer", "Roeier", "ClimbMill", "Ligfiets"]; // oude lijst (v2), voor migratie
 /* Cardiotoestellen van Cabana (foto's van Norman, 1 okt 2026). De naam blijft de sleutel van je eerdere sessies. */
 const CARDIO_CATALOG = [
-  { key: "c-climbmill", name: "ClimbMill", nl: "Matrix Endurance Stepper · weerstand 1 tot 30", img: "cardio-stepper",
-    tips: ["Niveau is de weerstand, van 1 tot 30.", "Volgorde van de getallen: niveau, tijd, hartslag, kcal, verdiepingen, stappen per minuut, stappen."] },
+  { key: "c-climbmill", name: "ClimbMill", nl: "Matrix Endurance Stepper met touchscreen · weerstand 1 tot 30", img: "cardio-stepper-touch",
+    tips: ["Niveau is de weerstand, van 1 tot 30.", "Kopieer na je training het eindscherm met Live Text en plak het hier; controleer niveau, tijd, kcal en stappen.", "Stuur Claude eens een foto van je eindscherm, dan wordt het uitlezen precies op dit scherm afgestemd."] },
   { key: "c-treadmill", name: "Loopband", nl: "Matrix-loopband met touchscreen", img: "cardio-treadmill",
     tips: ["Het scherm toont woorden (TIME, MILES, CALORIES, MPH, % INCLINE): Kopieer alles werkt hier het best.", "Mijlen en mph worden omgerekend naar km en km/u, de helling gaat in de notitie.", "Tip: lees af op het eindscherm, dan staat de totale tijd er en niet een rondetijd."] },
   { key: "c-elliptical", name: "Crosstrainer", nl: "Matrix-crosstrainer met LED-console (Sprint 8)", img: "cardio-elliptical",
@@ -641,8 +641,6 @@ const CARDIO_CATALOG = [
   { key: "c-elliptical-led", name: "Crosstrainer klassiek", nl: "Oudere Matrix-crosstrainer met puntjesscherm", img: "cardio-elliptical-led",
     tips: ["Op het eindscherm (END) staan drie getallen: tijd, dan het vak dat je kiest (kcal, RPM, watt of hartslag) en dan snelheid, afstand of niveau.", "Druk op de knopjes onder het scherm om te wisselen en vul wat je ziet zelf aan."] },
   { key: "c-upright", name: "Hometrainer", nl: "Matrix-fiets met touchscreen", img: "cardio-upright",
-    tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
-  { key: "c-hybrid", name: "Hybride fiets", nl: "Matrix-fiets met hoge handgrepen", img: "cardio-hybrid",
     tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
   { key: "c-recumbent", name: "Ligfiets", nl: "Matrix-ligfiets met touchscreen", img: "cardio-recumbent",
     tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
@@ -738,14 +736,14 @@ let state;
 function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
-  if (!s || !s.data) s = { profile: "patrick", data: {}, v: 4 };
+  if (!s || !s.data) s = { profile: "patrick", data: {}, v: 5 };
   for (const p in PROFILES) if (!s.data[p]) s.data[p] = blankProfile();
   if (!PROFILES[s.profile]) s.profile = "patrick";
   return migrate(s);
 }
 /* v1 → v2: generieke toestellen vervangen door de echte Cabana-toestellen; eigen toestellen blijven. */
 function migrate(s) {
-  if (s.v >= 4) return s;
+  if (s.v >= 5) return s;
   if (s.v < 3 || !s.v) {
   if (s.v < 2 || !s.v) for (const p in s.data) {
     const d = s.data[p];
@@ -772,7 +770,12 @@ function migrate(s) {
     if (d.cardio) d.cardio = topFirst(d.cardio, ["c-climbmill", "c-treadmill"]);
     if (d.machines) d.machines = topFirst(d.machines, MACHINE_TOP);
   }
-  s.v = 4;
+  /* v4 → v5: de "Hybride fiets" bleek de stepper te zijn: weghalen, tenzij er al sessies op staan */
+  for (const p in s.data) {
+    const d = s.data[p];
+    if (d.cardio) d.cardio = d.cardio.filter(c => c.key !== "c-hybrid" || (d.sessions || []).some(x => x.module === "cardio" && x.exercise === c.name)).map(c => c.key === "c-hybrid" ? Object.assign(c, { key: undefined }) : c);
+  }
+  s.v = 5;
   return s;
 }
 function save() {
@@ -2318,7 +2321,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v31";
+  const APP_VERSION = "cabana-v32";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
