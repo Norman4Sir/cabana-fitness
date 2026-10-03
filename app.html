@@ -859,18 +859,18 @@ const VIEWS = {}, AFTER = {};
 
 /* Na de training: één tik om de krachttraining van vandaag naar Apple Gezondheid te sturen. */
 function healthCard() {
-  const dr = healthDraft(localDay(new Date())); if (!dr) return "";
+  const id = todayBlock(), dr = id && healthDraft(id); if (!dr) return "";
   const st = dayStats(dr.list);
   return `<section class="card">
     <p class="eyebrow">Apple Gezondheid</p>
-    <p class="small" style="margin:0">Vandaag ${st.n} ${st.n === 1 ? "oefening" : "oefeningen"}${st.volume ? `, ${kg(st.volume)} kg volume` : ""}, ongeveer ${dr.min} min.</p>
+    <p class="small" style="margin:0">Training van ${dr.id.slice(11)}: ${st.n} ${st.n === 1 ? "oefening" : "oefeningen"}${st.volume ? `, ${kg(st.volume)} kg volume` : ""}, ongeveer ${dr.min} min.</p>
     ${dr.sent ? `<p class="sent">Naar Gezondheid gestuurd ${esc(fmtDate(dr.sent))}</p><button class="btn ghost" data-go="health">Bekijken</button>`
       : `<div class="row"><button class="btn primary" id="homeHealth">Stuur naar Gezondheid</button><button class="btn ghost" data-go="health">Aanpassen</button></div>`}
   </section>`;
 }
 AFTER.home = () => {
   if (matchMedia("(prefers-reduced-motion: reduce)").matches) $$("svg.ill").forEach(x => x.pauseAnimations && x.pauseAnimations());
-  const b = $("#homeHealth"); if (b) b.onclick = () => { buzz(); sendToHealth(healthDraft(localDay(new Date()))); setTimeout(() => go("home"), 600); };
+  const b = $("#homeHealth"); if (b) b.onclick = () => { buzz(); sendToHealth(healthDraft(todayBlock())); setTimeout(() => go("home"), 600); };
 };
 function progTile() {
   const ps = progState(), pr = PROGRAMS.find(p => p.id === ps.id);
@@ -1783,14 +1783,29 @@ function sheetsCard() {
    opdracht "Cabana naar Gezondheid", die met de actie "Registreer training" een workout vastlegt. */
 const SHORTCUT = "Cabana naar Gezondheid";
 const healthOf = () => (P().health = P().health || {});
-const healthList = (day) => P().sessions.filter(s => localDay(s.ts) === day && s.module !== "cardio" && !isMilestone(s)).sort((a, b) => a.ts.localeCompare(b.ts));
-function healthDraft(day) {
-  const list = healthList(day); if (!list.length) return null;
-  const saved = healthOf()[day] || {};
-  const start = new Date(new Date(list[0].ts).getTime() - 10 * 60000), end = new Date(list[list.length - 1].ts);
-  const min = saved.min || Math.max(15, Math.round((end - start) / 60000));
-  return { day, list, start: saved.start || localTime(start), min, kcal: saved.kcal != null && saved.kcal !== "" ? saved.kcal : Math.round(min * 5), sent: saved.sent || "" };
+/* Eén training = sessies zonder pauze van meer dan een uur. Zo wordt een plank 's ochtends en kracht 's avonds niet één training van 8 uur.
+   Een training heet "2026-10-03@19:20" (dag @ tijd van de eerste oefening). */
+const HEALTH_GAP = 60 * 60000;
+function healthBlocks() {
+  const list = P().sessions.filter(s => s.module !== "cardio" && !isMilestone(s)).sort((a, b) => a.ts.localeCompare(b.ts));
+  const blocks = [];
+  for (const s of list) {
+    const b = blocks[blocks.length - 1];
+    if (b && localDay(b[0].ts) === localDay(s.ts) && new Date(s.ts) - new Date(b[b.length - 1].ts) <= HEALTH_GAP) b.push(s); else blocks.push([s]);
+  }
+  return blocks.map(b => ({ id: `${localDay(b[0].ts)}@${localTime(b[0].ts)}`, list: b })).reverse();
 }
+const healthList = (id) => (healthBlocks().find(b => b.id === id) || { list: [] }).list;
+/* Duur van de eerste oefening: een hold telt zijn seconden, krachtwerk ongeveer 2 minuten per set. */
+const leadMin = (s) => s.seconds ? s.seconds / 60 : (+s.sets || 3) * 2;
+function healthDraft(id) {
+  const list = healthList(id); if (!list.length) return null;
+  const day = id.slice(0, 10), saved = healthOf()[id] || {};
+  const start = new Date(new Date(list[0].ts).getTime() - leadMin(list[0]) * 60000), end = new Date(list[list.length - 1].ts);
+  const min = saved.min || Math.max(1, Math.round((end - start) / 60000));
+  return { id, day, list, start: saved.start || localTime(start), min, kcal: saved.kcal != null && saved.kcal !== "" ? saved.kcal : Math.round(min * 5), sent: saved.sent || "" };
+}
+const todayBlock = () => { const b = healthBlocks()[0]; return b && b.id.slice(0, 10) === localDay(new Date()) ? b.id : null; };
 function healthPayload(dr) {
   const st = dayStats(dr.list);
   /* Gezondheid weigert een training die in de toekomst eindigt: schuif de start terug zodat het einde uiterlijk nu is */
@@ -1801,12 +1816,12 @@ function healthPayload(dr) {
     oefeningen: st.n, volume_kg: st.volume, samenvatting: dr.list.map(s => `${s.exercise}: ${describe(s)}`).join("\n") };
 }
 function sendToHealth(dr) {
-  healthOf()[dr.day] = { start: dr.start, min: dr.min, kcal: dr.kcal, sent: new Date().toISOString() }; save();
+  healthOf()[dr.id] = { start: dr.start, min: dr.min, kcal: dr.kcal, sent: new Date().toISOString() }; save();
   const url = `shortcuts://run-shortcut?name=${encodeURIComponent(SHORTCUT)}&input=text&text=${encodeURIComponent(JSON.stringify(healthPayload(dr)))}`;
   try { (window.top || window).location.href = url; } catch (e) { try { location.href = url; } catch (e2) {} }
   toast("Opdrachten opent. Gebeurt er niets? Zet de app op je beginscherm.");
 }
-const healthDays = () => [...new Set(P().sessions.filter(s => s.module !== "cardio" && !isMilestone(s)).map(s => localDay(s.ts)))].sort().reverse();
+const healthDays = () => healthBlocks().map(b => b.id);
 
 VIEWS.health = () => {
   const days = healthDays();
@@ -1817,8 +1832,8 @@ VIEWS.health = () => {
   <div class="head"><h1>Apple Gezondheid</h1><p>Stuur je krachttraining als workout naar Gezondheid en je Activiteit-ringen. De oefeningen, sets en gewichten gaan mee als samenvatting.</p></div>
   ${!dr ? `<section class="card"><p class="empty">Nog geen krachttraining gelogd voor ${PROFILES[state.profile]}. Cardio laat je door je Apple Watch zelf vastleggen.</p></section>` : `
   <section class="card">
-    ${days.length > 1 ? `<div class="chips">${days.slice(0, 6).map(d => `<button class="chip" data-day="${d}" aria-pressed="${d === day}">${d === localDay(new Date()) ? "Vandaag" : new Date(d + "T12:00").toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" })}</button>`).join("")}</div>` : ""}
-    <h3>${esc(dayLabel(day))}</h3>
+    ${days.length > 1 ? `<div class="chips">${days.slice(0, 6).map(d => `<button class="chip" data-day="${d}" aria-pressed="${d === day}">${d.slice(0, 10) === localDay(new Date()) ? "Vandaag" : new Date(d.slice(0, 10) + "T12:00").toLocaleDateString("nl-NL", { weekday: "short", day: "numeric", month: "short" })} ${d.slice(11)}</button>`).join("")}</div>` : ""}
+    <h3>${esc(dayLabel(day.slice(0, 10)))} · ${day.slice(11)}</h3>
     <div class="stats"><div><b>${st.n}</b><span>oefeningen</span></div><div><b>${kg(st.volume) || 0}</b><span>kg volume</span></div><div><b id="hMinB">${dr.min}</b><span>minuten</span></div></div>
     <div class="hist">${dr.list.map(s => `<div><span class="l"><b>${esc(s.exercise)}</b><span>${localTime(s.ts)} · ${esc(describe(s))}</span></span></div>`).join("")}</div>
     <div class="row">
@@ -1826,7 +1841,7 @@ VIEWS.health = () => {
       <label class="f">Duur (min)<input class="i" id="hMin" inputmode="numeric" value="${dr.min}"></label>
       <label class="f">Actieve kcal<input class="i" id="hKcal" inputmode="numeric" value="${dr.kcal}"></label>
     </div>
-    <p class="muted small" style="margin:0">Duur en kcal zijn een schatting uit je logtijden (5 kcal per minuut). Pas ze aan als je het beter weet.</p>
+    <p class="muted small" style="margin:0">Duur en kcal zijn een schatting uit je logtijden (5 kcal per minuut). Een pauze van meer dan een uur begint een nieuwe training. Pas ze aan als je het beter weet.</p>
     <button class="btn primary big" id="hSend">${dr.sent ? "Nog eens naar Gezondheid" : "Stuur naar Apple Gezondheid"}</button>
     ${dr.sent ? `<p class="sent">Verstuurd ${esc(fmtDate(dr.sent))}. Nog eens sturen maakt een tweede workout.</p>` : ""}
     <button class="btn ghost" id="hCopy">Kopieer gegevens</button>
@@ -2192,7 +2207,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v26";
+  const APP_VERSION = "cabana-v27";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
