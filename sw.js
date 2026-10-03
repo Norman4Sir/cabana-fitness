@@ -1,5 +1,5 @@
 // Offline-cache: de app werkt ook zonder (of met haperende) wifi in de gym.
-const CACHE = "cabana-v28";
+const CACHE = "cabana-v29";
 // Foto's van de toestellen veranderen niet: ze staan in een eigen cache die bij een nieuwe versie blijft staan.
 const IMG_CACHE = "cabana-img-1";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];

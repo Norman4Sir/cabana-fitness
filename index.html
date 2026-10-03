@@ -408,6 +408,23 @@ fieldset { border-color: var(--glass-edge); background: rgb(255 255 255 / .06); 
 .plyoph { display: grid; place-items: center; color: var(--me); background: color-mix(in srgb, var(--me) 14%, var(--surface)) !important; }
 .prog .thumbs .plyoic { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; color: var(--me); background: color-mix(in srgb, var(--me) 14%, var(--surface)); }
 .prog .thumbs .plyoic svg { width: 26px; height: 26px; }
+.pcard { --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100; --s5: #e87ba4; --s6: #008300; --s7: #4a3aa7; --s8: #e34948; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .pcard { --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767; } }
+:root[data-theme="dark"] .pcard { --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500; --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767; }
+.pa-zero { stroke: var(--muted); stroke-opacity: .55; }
+.pa-line { fill: none; stroke: var(--c); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 1; animation: pcDraw 1.3s var(--d) cubic-bezier(.5, 0, .2, 1) forwards; }
+.pa-dot { fill: var(--c); stroke: var(--surface); stroke-width: 2; opacity: 0; animation: pcPop .3s calc(var(--d) + 1s) ease-out forwards; }
+.pa-other .pa-line { stroke-opacity: .45; stroke-width: 1.5; } .pa-other .pa-dot { r: 3; fill-opacity: .5; }
+.pa-dim { opacity: .18; } .pa-focus .pa-line { stroke-width: 3.5; }
+.pa-hit { fill: none; stroke: var(--ink); stroke-width: 2; }
+.plegend { display: grid; grid-template-columns: 1fr; gap: 6px; }
+.plg { display: flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 10px; border-radius: 12px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 70%, transparent); font: inherit; font-size: 13px; color: var(--ink); text-align: left; cursor: pointer; min-width: 0; }
+.plg i { flex: none; width: 14px; height: 4px; border-radius: 2px; background: var(--c, var(--muted)); }
+.plg span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plg b { font-variant-numeric: tabular-nums; font-size: 13px; }
+.plg.on { border-color: var(--c); box-shadow: inset 0 0 0 1px var(--c); }
+.plg-other { cursor: default; color: var(--muted); } .plg-other i { opacity: .5; }
+@media (prefers-reduced-motion: reduce) { .pa-line, .pa-dot { animation: none; opacity: 1; stroke-dashoffset: 0; } }
 /* Voortgang: grafiek, hero-getal, overzicht per dag */
 .phero { display: flex; flex-direction: column; gap: 2px; }
 .phero b { font-family: var(--font-display); font-size: 44px; line-height: 1; font-weight: 800; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -1553,7 +1570,7 @@ const PMETRICS = {
   vol: { label: "Volume", unit: " kg", of: s => +vol(s) || 0, agg: sum, hint: "sets × herhalingen × gewicht, per dag opgeteld" },
   reps: { label: "Herhalingen", unit: "", of: s => (+s.sets || 1) * (+s.reps || 0), agg: sum, hint: "alle herhalingen van de dag" },
 };
-let progPick = { ex: "", m: "kg", all: false };
+let progPick = { ex: "", m: "kg", all: false, focus: "" };
 const strengthOf = (p = state.profile) => sessionsOf(p).filter(s => isStrength(s) && (s.reps || s.weight_kg));
 function progExercises(list) {
   const c = {}; list.forEach(s => { c[s.exercise] = (c[s.exercise] || 0) + 1; });
@@ -1608,6 +1625,74 @@ function progChart(pts, unit) {
   </div>`;
 }
 
+/* Startoverzicht: alle oefeningen in één grafiek, elk als % ten opzichte van je eerste training
+   (zo passen een beenpers van 100 kg en een curl van 14 kg op één as). Kleur hoort bij de oefening
+   (volgorde van eerste keer gelogd), de eerste 8 krijgen een eigen kleur, de rest is grijs. */
+const ALL_COLORS = 8;
+function allSeries(list) {
+  const order = []; [...list].sort((a, b) => a.ts.localeCompare(b.ts)).forEach(s => { if (!order.includes(s.exercise)) order.push(s.exercise); });
+  return order.map((ex, i) => {
+    const m = list.some(s => s.exercise === ex && +s.weight_kg) ? "kg" : "reps";
+    const pts = progSeries(list, ex, m);
+    const f = pts.length ? pts[0].v : 0;
+    return { ex, i, m, c: i < ALL_COLORS ? i + 1 : 0, pts: pts.map(p => ({ day: p.day, v: p.v, pct: f ? r2((p.v / f - 1) * 100) : 0 })) };
+  }).filter(s => s.pts.length);
+}
+function allChart(series, focus) {
+  const W = 340, H = 230, L = 40, R = 12, T = 16, B = 28;
+  const all = series.flatMap(s => s.pts);
+  const days = [...new Set(all.map(p => p.day))].sort();
+  const t0 = new Date(days[0]).getTime(), t1 = new Date(days[days.length - 1]).getTime();
+  const pcts = all.map(p => p.pct), lo0 = Math.min(0, ...pcts), hi0 = Math.max(0, ...pcts), span = hi0 - lo0 || 20;
+  const step = [5, 10, 20, 25, 50, 100, 200].find(s => span / s <= 4) || 500;
+  const lo = Math.floor(lo0 / step) * step, hi = Math.max(Math.ceil((hi0 + span * .08) / step) * step, lo + step);
+  const x = (d) => days.length === 1 ? L + (W - L - R) / 2 : L + (new Date(d).getTime() - t0) / (t1 - t0) * (W - L - R);
+  const y = (v) => T + (1 - (v - lo) / (hi - lo)) * (H - T - B);
+  const grid = []; for (let v = lo; v <= hi + 1e-9; v += step) grid.push(v);
+  const ordered = [...series].sort((a, b) => (a.ex === focus) - (b.ex === focus) || (a.c ? 1 : 0) - (b.c ? 1 : 0));
+  const tips = [];
+  const marks = ordered.map(s => {
+    const col = s.c ? `var(--s${s.c})` : "var(--muted)", dim = focus && s.ex !== focus;
+    const xy = s.pts.map(p => [x(p.day), y(p.pct)]);
+    s.pts.forEach((p, k) => tips.push({ x: xy[k][0], y: xy[k][1], e: s.ex, d: p.day, v: p.v, u: s.m === "kg" ? " kg" : " herh.", p: p.pct, c: s.c, f: !dim }));
+    const path = xy.map((q, k) => (k ? "L" : "M") + q[0].toFixed(1) + " " + q[1].toFixed(1)).join(" ");
+    const cls = `pa-s${s.c ? "" : " pa-other"}${dim ? " pa-dim" : ""}${s.ex === focus ? " pa-focus" : ""}`;
+    return `<g class="${cls}" style="--c:${col};--d:${(.15 + s.i * .08).toFixed(2)}s">${xy.length > 1 ? `<path class="pa-line" d="${path}" pathLength="1"/>` : ""}${xy.map(q => `<circle class="pa-dot" cx="${q[0].toFixed(1)}" cy="${q[1].toFixed(1)}" r="4"/>`).join("")}</g>`;
+  }).join("");
+  return `<div class="pchart" id="achart" data-tips='${esc(JSON.stringify(tips))}'>
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Alle oefeningen: procent sterker dan je eerste training">
+      ${grid.map(v => `<line class="pc-grid${v === 0 ? " pa-zero" : ""}" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/><text class="pc-ax" x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v > 0 ? "+" : ""}${v}%</text>`).join("")}
+      ${marks}
+      <text class="pc-ax" x="${L}" y="${H - 8}">${shortDay(days[0])}</text>
+      ${days.length > 1 ? `<text class="pc-ax" x="${W - R}" y="${H - 8}" text-anchor="end">${shortDay(days[days.length - 1])}</text>` : ""}
+      <line class="pc-cross" id="paCross" x1="0" x2="0" y1="${T}" y2="${H - B}" visibility="hidden"/>
+      <circle class="pa-hit" id="paHit" r="7" visibility="hidden"/>
+    </svg>
+    <div class="pc-tip" id="paTip" hidden></div>
+  </div>`;
+}
+function allCard(list) {
+  const series = allSeries(list); if (!series.length) return "";
+  const focus = series.some(s => s.ex === progPick.focus) ? progPick.focus : "";
+  const multi = series.filter(s => s.pts.length > 1);
+  const avg = multi.length ? Math.round(multi.reduce((a, s) => a + s.pts[s.pts.length - 1].pct, 0) / multi.length) : 0;
+  const colored = series.filter(s => s.c), others = series.filter(s => !s.c);
+  const pctTxt = (s) => { const p = s.pts[s.pts.length - 1].pct; return s.pts.length < 2 ? "start" : `${p > 0 ? "+" : p < 0 ? "−" : "±"}${Math.abs(Math.round(p))}%`; };
+  return `<section class="card pcard">
+    <p class="eyebrow">Alle oefeningen</p>
+    <div class="phero">
+      <b class="${avg > 0 ? "up" : ""}">${multi.length ? `${avg > 0 ? "+" : avg < 0 ? "−" : "±"}${Math.abs(avg)}%` : series.length}</b>
+      <span>${multi.length ? `gemiddeld sterker dan je start, over ${multi.length} ${multi.length === 1 ? "oefening" : "oefeningen"}` : `${series.length === 1 ? "oefening" : "oefeningen"} gelogd. Na je volgende training lopen de lijnen uit elkaar.`}</span>
+    </div>
+    ${allChart(series, focus)}
+    <div class="plegend" role="group" aria-label="Oefeningen">
+      ${colored.map(s => `<button class="plg${s.ex === focus ? " on" : ""}" data-focus="${esc(s.ex)}" aria-pressed="${s.ex === focus}" style="--c:var(--s${s.c})"><i></i><span>${esc(s.ex)}</span><b>${pctTxt(s)}</b></button>`).join("")}
+      ${others.length ? `<span class="plg plg-other"><i></i><span>Overige (${others.length})</span></span>` : ""}
+    </div>
+    <p class="muted small" style="margin:0">Elke lijn begint bij 0% op je eerste training van die oefening: zwaarste gewicht van de dag (of herhalingen zonder gewicht). Tik een naam om die lijn uit te lichten en hieronder te bekijken.</p>
+  </section>`;
+}
+
 VIEWS.progress = () => {
   const list = strengthOf(), exs = progExercises(list);
   const back = backBtn("home", "Dashboard");
@@ -1626,7 +1711,9 @@ VIEWS.progress = () => {
   const dayKeys = Object.keys(days), shown = progPick.all ? dayKeys : dayKeys.slice(0, 10);
   return `${back}
   <div class="head"><h1>Voortgang</h1><p>${PROFILES[state.profile]} · ${list.length} ${list.length === 1 ? "oefening" : "oefeningen"} gelogd op ${dayKeys.length} ${dayKeys.length === 1 ? "dag" : "dagen"}</p></div>
-  <section class="card pcard">
+  ${allCard(list)}
+  <section class="card pcard" id="pDetail">
+    <p class="eyebrow">Per oefening</p>
     <label class="f">Oefening<select class="i" id="pEx">${exs.map(e => `<option${e === progPick.ex ? " selected" : ""}>${esc(e)}</option>`).join("")}</select></label>
     <div class="chips" role="group" aria-label="Wat wil je zien">${mAllowed.map(k => `<button class="chip" data-pm="${k}" aria-pressed="${k === progPick.m}">${PMETRICS[k].label}</button>`).join("")}</div>
     <div class="phero">
@@ -1653,6 +1740,25 @@ AFTER.progress = () => {
   ex.onchange = () => { progPick.ex = ex.value; render(); };
   $$("[data-pm]").forEach(b => b.onclick = () => { progPick.m = b.dataset.pm; render(); });
   const all = $("#pAll"); if (all) all.onclick = () => { progPick.all = true; render(); };
+  $$("[data-focus]").forEach(b => b.onclick = () => { const e = b.dataset.focus; buzz(); progPick.focus = progPick.focus === e ? "" : e; if (progPick.focus) progPick.ex = e; render(); });
+  const abox = $("#achart");
+  if (abox) {
+    const atip = $("#paTip"), across = $("#paCross"), ahit = $("#paHit"), asvg = abox.querySelector("svg");
+    const tips = JSON.parse(abox.dataset.tips), pool = tips.some(t => !t.f) ? tips.filter(t => t.f) : tips;
+    const ashow = (e) => {
+      const r = asvg.getBoundingClientRect(), sx = (e.clientX - r.left) / r.width * 340, sy = (e.clientY - r.top) / r.height * 230;
+      const p = pool.reduce((a, q) => Math.hypot(q.x - sx, (q.y - sy) * .6) < Math.hypot(a.x - sx, (a.y - sy) * .6) ? q : a);
+      across.setAttribute("x1", p.x); across.setAttribute("x2", p.x); across.setAttribute("visibility", "visible");
+      ahit.setAttribute("cx", p.x); ahit.setAttribute("cy", p.y); ahit.setAttribute("visibility", "visible");
+      atip.hidden = false; atip.innerHTML = `<b>${esc(p.e)}</b><span>${esc(dayLabel(p.d))}</span><span>${kg(p.v)}${esc(p.u)} · ${p.p > 0 ? "+" : ""}${Math.round(p.p)}% t.o.v. start</span>`;
+      const px = p.x / 340 * r.width, w = atip.offsetWidth;
+      atip.style.left = Math.min(Math.max(px - w / 2, 0), r.width - w) + "px";
+      atip.style.top = Math.max(p.y / 230 * r.height - atip.offsetHeight - 14, 0) + "px";
+    };
+    const ahide = () => { atip.hidden = true; across.setAttribute("visibility", "hidden"); ahit.setAttribute("visibility", "hidden"); };
+    abox.addEventListener("pointerdown", ashow); abox.addEventListener("pointermove", ashow); abox.addEventListener("pointerleave", ahide);
+  }
+
   $("#xlsxDl").onclick = () => { download(`Cabana voortgang ${PROFILES[state.profile]} ${localDay(Date.now())}.xlsx`, toXlsx(state.profile), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"); toast("Excel-bestand gemaakt"); };
   const box = $("#pchart"), tip = $("#pcTip"), cross = $("#pcCross"), svg = box.querySelector("svg");
   const pts = JSON.parse(box.dataset.pts), unit = box.dataset.unit;
@@ -2223,7 +2329,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v28";
+  const APP_VERSION = "cabana-v29";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
