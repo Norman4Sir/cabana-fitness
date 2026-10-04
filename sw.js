@@ -1,10 +1,10 @@
 // Offline-cache: de app werkt ook zonder (of met haperende) wifi in de gym.
-const CACHE = "cabana-v32";
+const CACHE = "cabana-v33";
 // Foto's van de toestellen veranderen niet: ze staan in een eigen cache die bij een nieuwe versie blijft staan.
 const IMG_CACHE = "cabana-img-1";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png", "./apple-touch-icon.png"];
 const IMAGES = ["./img/beach.jpg", ...["0473","0474","0475","0476","0477","0478","0480","0481","0482","0483","0484","0485","0486","0487"].map(n => `./img/IMG_${n}.jpg`),
-  ...["stepplank","cardio-stepper-touch","cardio-treadmill","cardio-elliptical","cardio-elliptical-led","cardio-upright","cardio-recumbent","cardio-nike","cardio-spin","cardio-rower","cardio-climber","cardio-sdrive","str-shoulderpress","str-dipchin","str-hyperext","str-sissy","str-abbench"].map(n => `./img/${n}.jpg`)];
+  ...["stepplank","cardio-climbmill","cardio-stepper-touch","cardio-treadmill","cardio-elliptical","cardio-elliptical-led","cardio-upright","cardio-recumbent","cardio-spin","cardio-rower","cardio-climber","cardio-sdrive","str-shoulderpress","str-dipchin","str-hyperext","str-sissy","str-abbench"].map(n => `./img/${n}.jpg`)];
 // Elk bestand apart ophalen: valt de wifi even weg, dan mislukt alleen dat bestand en niet de hele installatie.
 const fill = (name, list, skipHave) => caches.open(name).then(c => Promise.all(list.map(u =>
   (skipHave ? c.match(u) : Promise.resolve(null)).then(have => have || fetch(u, { cache: "no-cache" }).then(r => r.ok && c.put(u, r))).catch(() => {}))));

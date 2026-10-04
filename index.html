@@ -648,8 +648,10 @@ const MODULES = { cardio: "Cardio Cabana", machine: "Fitness Toestellen", free: 
 const DEFAULT_CARDIO = ["Loopband", "Crosstrainer", "Hometrainer", "Roeier", "ClimbMill", "Ligfiets"]; // oude lijst (v2), voor migratie
 /* Cardiotoestellen van Cabana (foto's van Norman, 1 okt 2026). De naam blijft de sleutel van je eerdere sessies. */
 const CARDIO_CATALOG = [
-  { key: "c-climbmill", name: "ClimbMill", nl: "Matrix Endurance Stepper met touchscreen · weerstand 1 tot 30", img: "cardio-stepper-touch",
-    tips: ["Niveau is de weerstand, van 1 tot 30.", "Kopieer na je training het eindscherm met Live Text en plak het hier; controleer niveau, tijd, kcal en stappen.", "Stuur Claude eens een foto van je eindscherm, dan wordt het uitlezen precies op dit scherm afgestemd."] },
+  { key: "c-climbmill", name: "ClimbMill", nl: "Matrix ClimbMill (draaiende trap) · niveau 1 tot 25", img: "cardio-climbmill",
+    tips: ["Het scherm toont woorden: Heart Rate, SPM (treden per minuut), Time Elapsed, Calories en Total Steps.", "Kopieer na je training het scherm met Live Text en plak het hier. Tijd, niveau, kcal, treden per minuut en treden worden ingevuld; controleer even.", "Niveau loopt van 1 tot 25."] },
+  { key: "c-stepper", name: "Endurance Stepper", nl: "Matrix Endurance Stepper met touchscreen · weerstand 1 tot 30", img: "cardio-stepper-touch",
+    tips: ["Niveau is de weerstand, van 1 tot 30.", "Kopieer na je training het eindscherm met Live Text en plak het hier; controleer niveau, tijd, kcal en stappen."] },
   { key: "c-treadmill", name: "Loopband", nl: "Matrix-loopband met touchscreen", img: "cardio-treadmill",
     tips: ["Het scherm toont woorden (TIME, MILES, CALORIES, MPH, % INCLINE): Kopieer alles werkt hier het best.", "Mijlen en mph worden omgerekend naar km en km/u, de helling gaat in de notitie.", "Tip: lees af op het eindscherm, dan staat de totale tijd er en niet een rondetijd."] },
   { key: "c-elliptical", name: "Crosstrainer", nl: "Matrix-crosstrainer met LED-console (Sprint 8)", img: "cardio-elliptical",
@@ -659,8 +661,6 @@ const CARDIO_CATALOG = [
   { key: "c-upright", name: "Hometrainer", nl: "Matrix-fiets met touchscreen", img: "cardio-upright",
     tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
   { key: "c-recumbent", name: "Ligfiets", nl: "Matrix-ligfiets met touchscreen", img: "cardio-recumbent",
-    tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
-  { key: "c-nike", name: "Hometrainer Nike+", nl: "Matrix-fiets met Nike + iPod-scherm", img: "cardio-nike",
     tips: ["Kopieer het eindscherm met Live Text en plak het hier.", "Niveau en kcal komen in de velden; controleer even."] },
   { key: "c-spin", name: "Spinbike", nl: "Matrix CXP-spinfiets", img: "cardio-spin",
     tips: ["Het kleine scherm toont tijd, kcal, watt en RPM; plak of typ wat je ziet.", "Watt of RPM die niet in een veld passen, komen in de notitie."] },
@@ -672,7 +672,7 @@ const CARDIO_CATALOG = [
     tips: ["Noteer tijd en afstand of het aantal sprints; de weerstand (1 tot 10) kun je kwijt bij niveau.", "Voor trekken met de harnas: zet het in de notitie."] }
 ];
 const cdefOf = (it) => CARDIO_CATALOG.find(c => c.key === it.key) || { name: it.name, nl: "Eigen toestel", img: "", tips: [] };
-const catalogCardio = () => CARDIO_CATALOG.map(c => ({ id: uid(), key: c.key, name: c.name, comment: "" }));
+const catalogCardio = () => topFirst(CARDIO_CATALOG, CARDIO_TOP).map(c => ({ id: uid(), key: c.key, name: c.name, comment: "" }));
 const DEFAULT_MACHINES = ["Leg Press", "Chest Press", "Lat Pulldown", "Seated Row", "Shoulder Press", "Leg Extension", "Leg Curl", "Abdominal Crunch"]; // oude lijst (v1), voor migratie
 
 /* Gewichtsstapels zoals op de Matrix-plaatjes (lbs-stapels met kg-label). */
@@ -730,6 +730,7 @@ const CUSTOM_FIELDS = ["Zithoogte", "Rugleuning", "Overige instelling"];
 const defOf = (it) => CATALOG.find(c => c.key === it.key) || { name: it.name, nl: "Eigen toestel", stack: "fine", fields: CUSTOM_FIELDS, tips: [] };
 const stackOf = (it) => it.stack || defOf(it).stack;
 /* Basis van Norman: deze toestellen staan bovenaan de lijst (rest in de volgorde van de catalogus) */
+const CARDIO_TOP = ["c-climbmill", "c-stepper", "c-treadmill"];
 const MACHINE_TOP = ["dipchin", "abbench", "backext", "abcrunch", "hyperext", "sissy"];
 const topFirst = (list, top) => [...list].sort((a, b) => { const i = top.indexOf(a.key), j = top.indexOf(b.key); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
 const catalogMachines = () => topFirst(CATALOG, MACHINE_TOP).map(c => ({ id: uid(), key: c.key, name: c.name, settings: {}, comment: "" }));
@@ -752,14 +753,14 @@ let state;
 function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
-  if (!s || !s.data) s = { profile: "patrick", data: {}, v: 5 };
+  if (!s || !s.data) s = { profile: "patrick", data: {}, v: 6 };
   for (const p in PROFILES) if (!s.data[p]) s.data[p] = blankProfile();
   if (!PROFILES[s.profile]) s.profile = "patrick";
   return migrate(s);
 }
 /* v1 → v2: generieke toestellen vervangen door de echte Cabana-toestellen; eigen toestellen blijven. */
 function migrate(s) {
-  if (s.v >= 5) return s;
+  if (s.v >= 6) return s;
   if (s.v < 3 || !s.v) {
   if (s.v < 2 || !s.v) for (const p in s.data) {
     const d = s.data[p];
@@ -783,7 +784,7 @@ function migrate(s) {
   /* v3 → v4: stepper en loopband bovenaan bij cardio, de basistoestellen bovenaan bij kracht */
   for (const p in s.data) {
     const d = s.data[p];
-    if (d.cardio) d.cardio = topFirst(d.cardio, ["c-climbmill", "c-treadmill"]);
+    if (d.cardio) d.cardio = topFirst(d.cardio, CARDIO_TOP);
     if (d.machines) d.machines = topFirst(d.machines, MACHINE_TOP);
   }
   /* v4 → v5: de "Hybride fiets" bleek de stepper te zijn: weghalen, tenzij er al sessies op staan */
@@ -791,7 +792,15 @@ function migrate(s) {
     const d = s.data[p];
     if (d.cardio) d.cardio = d.cardio.filter(c => c.key !== "c-hybrid" || (d.sessions || []).some(x => x.module === "cardio" && x.exercise === c.name)).map(c => c.key === "c-hybrid" ? Object.assign(c, { key: undefined }) : c);
   }
-  s.v = 5;
+  /* v5 → v6: de "Hometrainer Nike+" bleek het scherm van de ClimbMill; de Endurance Stepper komt erbij */
+  for (const p in s.data) {
+    const d = s.data[p]; if (!d.cardio) continue;
+    const used = (c) => (d.sessions || []).some(x => x.module === "cardio" && x.exercise === c.name);
+    d.cardio = d.cardio.filter(c => c.key !== "c-nike" || used(c)).map(c => c.key === "c-nike" ? Object.assign(c, { key: undefined }) : c);
+    if (!d.cardio.some(c => c.key === "c-stepper")) d.cardio.push({ id: uid(), key: "c-stepper", name: "Endurance Stepper", comment: "" });
+    d.cardio = topFirst(d.cardio, CARDIO_TOP);
+  }
+  s.v = 6;
   return s;
 }
 function save() {
@@ -1100,8 +1109,44 @@ AFTER.cardioLog = () => {
   };
 };
 /* Tekst van een Matrix-scherm (via Live Text van de iPhone) omzetten naar duur, afstand, kcal, snelheid en helling */
+/* Touchscreen met woorden (ClimbMill met Nike+-scherm): "78 SPM", "4:58 Time Elapsed", "50 Calories", "358 Total Steps", niveau-schuif 1 tot 25.
+   Live Text zet de getallen soms op één regel en de woorden op de volgende; dan gaan we uit van de vaste volgorde
+   hartslag, SPM, tijd, calorieën, treden. */
+function parseLabeled(t) {
+  const n = (re) => { const m = t.match(re); return m ? parseFloat(m[1]) : ""; };
+  const times = [...t.matchAll(/(\d{1,2}):(\d{2})(?::(\d{2}))?/g)];
+  const toMin = (m) => m[3] ? (+m[1]) * 60 + (+m[2]) + (+m[3]) / 60 : (+m[1]) + (+m[2]) / 60;
+  const el = t.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*TIME\s*ELAPSED/);
+  const tm = el || times.find(m => !/^\s*(TIME\s*REMAINING|BEGIN|END|CLOCK)/.test(t.slice(m.index + m[0].length))) || times[0];
+  let dur = tm ? toMin(tm) : "";
+  /* Getal direct voor het woord: op dezelfde regel, of als enige op de regel erboven */
+  const lab = (w) => { const m = t.match(new RegExp(`(?:(?<![\\d:.])(\\d+)[ \\t]+|(?:^|\\n)[ \\t]*(\\d+)[ \\t]*\\n[ \\t]*)${w}`)); return m ? +(m[1] || m[2]) : ""; };
+  let spm = lab("SPM\\b"), steps = lab("TOTAL\\s*STEPS"), kcal = lab("CALORIES(?!\\s*\\/)"), hr = lab("HEART\\s*RATE"), floors = lab("FLOORS");
+  if (hr !== "" && (hr < 40 || hr > 220)) hr = "";
+  /* Getallen op één regel rond de tijd: ... SPM, tijd, calorieën, treden */
+  if (tm && (spm === "" || steps === "" || kcal === "")) {
+    const line = t.split(/\n/).find(l => l.includes(tm[0])) || "";
+    const parts = line.split(tm[0]);
+    const before = (parts[0].match(/\d+/g) || []).map(Number), after = (parts[1] || "").replace(/\d{1,2}:\d{2}/g, " ").match(/\d+/g) || [];
+    if (spm === "" && before.length) spm = before[before.length - 1];
+    if (hr === "" && before.length > 1 && before[before.length - 2] >= 40 && before[before.length - 2] <= 220) hr = before[before.length - 2];
+    if (kcal === "" && after[0]) kcal = +after[0];
+    if (steps === "" && after[1]) steps = +after[1];
+  }
+  /* Niveau: het getal op de schuif, niet de schaal (25 bovenaan, 1 onderaan) */
+  let level = "";
+  const lines = t.split(/\n/).map(l => l.trim()), li = lines.findIndex(l => /\bLEVEL\b/.test(l));
+  if (li >= 0) {
+    const nums = []; for (let i = li - 1; i >= 0 && /^\d{1,2}$/.test(lines[i]); i--) nums.unshift(+lines[i]);
+    const inl = lines[li].match(/^(\d{1,2})\s+LEVEL/); if (inl) nums.push(+inl[1]);
+    const c = nums.filter((v, i) => !(nums.length > 1 && i === 0 && v === 25) && !(nums.length > 2 && i === nums.length - 1 && v === 1));
+    level = c.length ? c[c.length - 1] : "";
+  }
+  return { dur: dur === "" ? "" : Math.round(dur * 10) / 10, dist: "", kcal, speed: level, incline: "", hr, miles: false, floors, spm, steps, extra: [] };
+}
 function parseMatrix(text) {
   const t = String(text).toUpperCase().replace(/,/g, ".").replace(/[Oo](?=\d)|(?<=\d)[Oo]/g, "0");
+  if (/TOTAL\s*STEPS|TIME\s*ELAPSED|\bSPM\b/.test(t)) return parseLabeled(t);
   const n = (re) => { const m = t.match(re); return m ? parseFloat(m[1]) : ""; };
   const r1 = (x) => x === "" ? "" : Math.round(x * 10) / 10;
   const miles = /\bMI\b|MPH|MILE/.test(t);
@@ -2337,7 +2382,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v32";
+  const APP_VERSION = "cabana-v33";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
