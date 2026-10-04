@@ -693,6 +693,8 @@ const CATALOG = [
     tips: ["Beenpad net achter je enkels, knieën gelijk met het draaipunt.", "Onderarmpads op een prettige hoogte, grepen vast.", "Buig je benen met heupen en rug stil, rustig terug."] },
   { key: "adduction", name: "Hip Adduction", nl: "Binnenkant dijen", img: "IMG_0478", stack: "std", fields: ["Voetpositie", "Startpositie kniepads"],
     tips: ["Kies een voetpositie waarbij je dijen horizontaal zijn.", "Zet de kniepads naar buiten op je startpositie, pak de grepen naast de zitting.", "Knieën rustig naar het midden en terug."] },
+  { key: "abduction", name: "Hip Abduction", nl: "Buitenkant heupen (knieën naar buiten)", img: "str-abduction", stack: "std", fields: ["Voetpositie", "Startpositie kniepads"],
+    tips: ["Kies zittend een voetpositie die prettig voelt.", "Duw de kniepads naar binnen op je startpositie en pak de grepen naast de zitting.", "Duw je knieën rustig uit elkaar zo ver als prettig is, en terug."] },
   { key: "calfpress", name: "Calf Press", nl: "Kuitpers", img: "IMG_0482", stack: "big", fields: ["Stoelslede (pull-pin)"],
     tips: ["Zet de stoelslede zo dat je knieën licht gebogen of gestrekt zijn.", "Pak de grepen naast de zitting.", "Duw je tenen zo ver mogelijk weg zonder je knieën te bewegen."] },
   { key: "chestpress", name: "Converging Chest Press", nl: "Borstpers", img: "IMG_0477", stack: "std", fields: ["Zithoogte", "Handgreep"],
@@ -753,14 +755,14 @@ let state;
 function load() {
   let s = null;
   try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
-  if (!s || !s.data) s = { profile: "patrick", data: {}, v: 6 };
+  if (!s || !s.data) s = { profile: "patrick", data: {}, v: 7 };
   for (const p in PROFILES) if (!s.data[p]) s.data[p] = blankProfile();
   if (!PROFILES[s.profile]) s.profile = "patrick";
   return migrate(s);
 }
 /* v1 → v2: generieke toestellen vervangen door de echte Cabana-toestellen; eigen toestellen blijven. */
 function migrate(s) {
-  if (s.v >= 6) return s;
+  if (s.v >= 7) return s;
   if (s.v < 3 || !s.v) {
   if (s.v < 2 || !s.v) for (const p in s.data) {
     const d = s.data[p];
@@ -800,7 +802,13 @@ function migrate(s) {
     if (!d.cardio.some(c => c.key === "c-stepper")) d.cardio.push({ id: uid(), key: "c-stepper", name: "Endurance Stepper", comment: "" });
     d.cardio = topFirst(d.cardio, CARDIO_TOP);
   }
-  s.v = 6;
+  /* v6 → v7: Hip Abduction erbij, direct na Hip Adduction */
+  for (const p in s.data) {
+    const d = s.data[p]; if (!d.machines || d.machines.some(m => m.key === "abduction")) continue;
+    const i = d.machines.findIndex(m => m.key === "adduction");
+    d.machines.splice(i < 0 ? d.machines.length : i + 1, 0, { id: uid(), key: "abduction", name: "Hip Abduction", settings: {}, comment: "" });
+  }
+  s.v = 7;
   return s;
 }
 function save() {
@@ -2382,7 +2390,7 @@ render();
 if ("serviceWorker" in navigator && location.protocol === "https:" && !/claude|anthropic|usercontent/.test(location.hostname)) {
   navigator.serviceWorker.register("sw.js").catch(() => {});
   /* Nieuwe versie online? Bij terugkeer naar de app zelf herladen, zodat afsluiten niet nodig is. Houd gelijk aan CACHE in sw.js. */
-  const APP_VERSION = "cabana-v33";
+  const APP_VERSION = "cabana-v34";
   setTimeout(syncSoon, 3000);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState !== "visible" || $(".lightbox") || ["Stop", "Annuleer"].includes($("#tBtn")?.textContent)) return;
